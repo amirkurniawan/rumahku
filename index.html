@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    
+    <!-- SEO Meta Tags -->
+    <title>RumahSubsidi.id - Marketplace Rumah Subsidi Indonesia Terpercaya</title>
+    <meta name="description" content="Platform resmi untuk mencari dan membeli rumah subsidi dengan mudah, cepat, dan terpercaya di seluruh Indonesia. Harga mulai Rp 166 juta.">
+    <meta name="keywords" content="rumah subsidi, rumah murah, perumahan subsidi, beli rumah, KPR subsidi, rumah tapak, rusun">
+    <meta name="author" content="RumahSubsidi.id">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo">
+                    <div class="logo-icon">🏠</div>
+                    <span>RumahSubsidi.id</span>
+                </a>
+                <nav>
+                    <ul>
+                        <li><a href="/" class="active">Beranda</a></li>
+                        <li><a href="search.html">Cari Rumah</a></li>
+                        <li><a href="#cara-beli">Cara Beli</a></li>
+                        <li><a href="#syarat">Syarat & Ketentuan</a></li>
+                        <li><a href="#bantuan">Bantuan</a></li>
+                    </ul>
+                </nav>
+                <div class="auth-buttons">
+                    <button class="btn btn-outline">Masuk</button>
+                    <button class="btn btn-primary">Daftar</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>Temukan Rumah Subsidi Impian Anda</h1>
+            <p>Platform resmi untuk mencari dan membeli rumah subsidi dengan mudah, cepat, dan terpercaya di seluruh Indonesia.</p>
+
+            <div class="search-box">
+                <form class="search-form" id="heroSearchForm" action="search.html" method="GET">
+                    <div class="form-group">
+                        <label for="provinsi">Provinsi</label>
+                        <select id="provinsi" name="provinsi" class="form-control">
+                            <option value="">Memuat data...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="kabupaten">Kabupaten/Kota</label>
+                        <select id="kabupaten" name="kabupaten" class="form-control">
+                            <option value="">Pilih Kabupaten/Kota</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button type="submit" class="btn btn-primary" style="height: 42px">
+                            <i class="fas fa-search"></i> Cari Rumah
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="container">
+            <div class="stats-grid">
+                <article class="stat-card">
+                    <div class="stat-number" id="countUnitSubsidi">0</div>
+                    <div class="stat-label">Unit Subsidi Tersedia</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-number" id="countUnitReady">0</div>
+                    <div class="stat-label">Unit Siap Huni</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-number" id="countPengembang">0</div>
+                    <div class="stat-label">Pengembang Terdaftar</div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-number" id="totalLokasi">0</div>
+                    <div class="stat-label">Lokasi Perumahan</div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- Property Listings -->
+    <section class="listings">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Rumah Subsidi Tersedia</h2>
+                <div>
+                    <a href="search.html" class="btn btn-outline">Lihat Semua</a>
+                </div>
+            </div>
+
+            <div class="filters">
+                <button class="filter-btn active" data-filter="all">Semua</button>
+                <button class="filter-btn" data-filter="tapak">Rumah Tapak</button>
+                <button class="filter-btn" data-filter="rusun">Rusun</button>
+                <button class="filter-btn" data-filter="ready">Siap Huni</button>
+                <button class="filter-btn" data-filter="progress">Dalam Pembangunan</button>
+            </div>
+
+            <div class="properties-grid" id="propertiesGrid">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> Memuat data...
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h3>RumahSubsidi.id</h3>
+                    <p>Platform marketplace resmi untuk rumah subsidi di Indonesia. Menghubungkan calon pembeli dengan pengembang terpercaya.</p>
+                </div>
+                <div class="footer-column">
+                    <h3>Navigasi</h3>
+                    <ul>
+                        <li><a href="/">Beranda</a></li>
+                        <li><a href="search.html">Cari Rumah</a></li>
+                        <li><a href="#cara-beli">Cara Beli</a></li>
+                        <li><a href="#syarat">Syarat & Ketentuan</a></li>
+                        <li><a href="#bantuan">Bantuan</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>Kontak</h3>
+                    <ul>
+                        <li><a href="mailto:info@rumahsubsidi.id">Email: info@rumahsubsidi.id</a></li>
+                        <li><a href="tel:1500123">Telepon: 1500-123</a></li>
+                        <li>Alamat: Gedung Tapera Indonesia</li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>Mitra</h3>
+                    <ul>
+                        <li><a href="https://tapera.go.id" target="_blank" rel="noopener">Tapera</a></li>
+                        <li><a href="https://pu.go.id" target="_blank" rel="noopener">Kementerian PUPR</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                &copy; 2025 RumahSubsidi.id - All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/script.js" defer></script>
+</body>
+</html>
