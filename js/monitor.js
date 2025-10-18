@@ -10,8 +10,9 @@
   const CONFIG = {
     enabled: true,
     sampleRate: 1.0, // 100% of users
-    debug: false,
-    endpoint: '/api/analytics' // Ganti dengan endpoint Anda
+    debug: true, // false for prod
+    // endpoint: '/api/analytics' // 
+    endpoint: null // No custom endpoint by default
   };
 
   // Performance Monitor Class

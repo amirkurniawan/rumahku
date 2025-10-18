@@ -96,4 +96,51 @@
     </div>
     <script src="js/monitor.js" defer></script>
 </body>
+<script>
+    // Detect error type from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorType = urlParams.get('error') || '404';
+    
+    const errorMessages = {
+        '400': {
+            icon: 'fas fa-exclamation-circle',
+            title: '400',
+            subtitle: 'Permintaan Tidak Valid',
+            message: 'Permintaan yang Anda kirim tidak dapat diproses.'
+        },
+        '403': {
+            icon: 'fas fa-ban',
+            title: '403',
+            subtitle: 'Akses Ditolak',
+            message: 'Anda tidak memiliki izin untuk mengakses halaman ini.'
+        },
+        '404': {
+            icon: 'fas fa-exclamation-triangle',
+            title: '404',
+            subtitle: 'Halaman Tidak Ditemukan',
+            message: 'Maaf, halaman yang Anda cari tidak dapat ditemukan.'
+        },
+        '500': {
+            icon: 'fas fa-server',
+            title: '500',
+            subtitle: 'Kesalahan Server',
+            message: 'Maaf, terjadi kesalahan pada server kami.'
+        },
+        '503': {
+            icon: 'fas fa-tools',
+            title: '503',
+            subtitle: 'Layanan Tidak Tersedia',
+            message: 'Layanan sedang dalam pemeliharaan. Silakan coba lagi nanti.'
+        }
+    };
+    
+    const error = errorMessages[errorType] || errorMessages['404'];
+    
+    // Update page content
+    document.querySelector('.error-icon i').className = error.icon;
+    document.querySelector('h1').textContent = error.title;
+    document.querySelector('h2').textContent = error.subtitle;
+    document.querySelector('p').textContent = error.message;
+    document.title = `${error.title} - ${error.subtitle} - RumahSubsidi.id`;
+</script>
 </html>
