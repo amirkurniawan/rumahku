@@ -39,31 +39,33 @@ Platform marketplace resmi untuk rumah subsidi di Indonesia yang dioptimasi untu
 
 ---
 
-## 📁 Struktur Folder
+## 📁 **Struktur Folder Final**
 ```
 rumahsubsidi/
-├── index.html              # Homepage
-├── search.html             # Search page with map
-├── detail.html             # Property detail page
-├── error.html              # Error page (404, 500)
-├── robots.txt              # SEO robots
-├── sitemap.xml             # XML sitemap
-├── manifest.json           # PWA manifest
-├── .htaccess              # Apache config
-├── README.md              # This file
+├── index.html              ✅ UPDATED
+├── search.html             ✅ UPDATED
+├── detail.html             ✅ UPDATED
+├── error.html
+├── robots.txt
+├── sitemap.xml
+├── manifest.json
+├── .htaccess
+├── README.md
+│
+├── components/             ⬅️ FOLDER BARU
+│   ├── navbar.html        ⬅️ FILE BARU
+│   └── footer.html        ⬅️ FILE BARU
 │
 ├── css/
-│   └── style.css          # Main stylesheet
+│   └── style.css
 │
-├── js/
-│   ├── script.js          # Homepage JS
-│   ├── search.js          # Search page JS
-│   ├── detail.js          # Detail page JS
-│   └── sw.js              # Service Worker
-│
-└── assets/
-    ├── icons/             # PWA icons (buat sendiri)
-    └── images/            # Static images
+└── js/
+    ├── components.js       ⬅️ FILE BARU
+    ├── script.js
+    ├── search.js
+    ├── detail.js
+    ├── sw.js
+    └── monitor.js
 ```
 
 ---
