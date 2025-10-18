@@ -1,0 +1,24 @@
+{
+  "name": "rumahsubsidi-id",
+  "version": "1.0.0",
+  "description": "Platform marketplace resmi untuk rumah subsidi di Indonesia",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server -p 8080 -c-1",
+    "dev": "npx live-server --port=8080",
+    "test": "echo 'Run tests here'",
+    "lighthouse": "lighthouse http://localhost:8080 --view",
+    "build": "echo 'Build completed'"
+  },
+  "keywords": [
+    "rumah-subsidi",
+    "real-estate",
+    "property",
+    "indonesia",
+    "marketplace"
+  ],
+  "author": "RumahSubsidi.id Team",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {}
+}
