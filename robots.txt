@@ -1,0 +1,14 @@
+# robots.txt for RumahSubsidi.id
+
+User-agent: *
+Allow: /
+Allow: /css/
+Allow: /js/
+Allow: /assets/
+
+Disallow: /admin/
+Disallow: /api/
+Disallow: /private/
+
+# Sitemap location
+Sitemap: https://rumahsubsidi.id/sitemap.xml

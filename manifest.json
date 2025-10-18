@@ -1,0 +1,28 @@
+{
+  "name": "RumahSubsidi.id - Marketplace Rumah Subsidi Indonesia",
+  "short_name": "RumahSubsidi",
+  "description": "Platform resmi untuk mencari dan membeli rumah subsidi dengan mudah, cepat, dan terpercaya di seluruh Indonesia",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#2c7be5",
+  "background_color": "#ffffff",
+  "lang": "id",
+  "dir": "ltr",
+  "categories": ["lifestyle", "business", "finance"],
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
