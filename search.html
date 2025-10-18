@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    
+    <!-- SEO Meta Tags -->
+    <title>Cari Rumah Subsidi - RumahSubsidi.id</title>
+    <meta name="description" content="Cari dan temukan rumah subsidi impian Anda dengan peta interaktif. Filter berdasarkan lokasi, harga, dan ketersediaan unit.">
+    <meta name="keywords" content="cari rumah subsidi, peta rumah subsidi, lokasi rumah subsidi, filter rumah subsidi">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/style.css">
+    
+    <style>
+        /* Search Page Specific Styles */
+        .search-page { padding: 2rem 0; }
+        
+        .search-header {
+            margin-bottom: 2rem;
+        }
+        
+        .search-header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .search-filters {
+            background-color: white;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+        
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .filter-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .results-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .view-toggle {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .view-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            background: white;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .view-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .map-container {
+            height: 600px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            background: #e5e3df;
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .search-results {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .filter-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .map-container {
+                height: 400px;
+            }
+            
+            .filter-actions {
+                flex-direction: column;
+            }
+            
+            .filter-actions .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo">
+                    <div class="logo-icon">🏠</div>
+                    <span>RumahSubsidi.id</span>
+                </a>
+                <nav>
+                    <ul>
+                        <li><a href="/">Beranda</a></li>
+                        <li><a href="search.html" class="active">Cari Rumah</a></li>
+                        <li><a href="#cara-beli">Cara Beli</a></li>
+                        <li><a href="#syarat">Syarat & Ketentuan</a></li>
+                        <li><a href="#bantuan">Bantuan</a></li>
+                    </ul>
+                </nav>
+                <div class="auth-buttons">
+                    <button class="btn btn-outline">Masuk</button>
+                    <button class="btn btn-primary">Daftar</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="search-page">
+        <div class="container">
+            <div class="search-header">
+                <h1>Cari Rumah Subsidi</h1>
+                <p>Temukan rumah subsidi di lokasi yang Anda inginkan dengan peta interaktif</p>
+            </div>
+
+            <!-- Search Filters -->
+            <section class="search-filters">
+                <form id="searchFiltersForm">
+                    <div class="filter-row">
+                        <div class="form-group">
+                            <label for="searchProvinsi">Provinsi</label>
+                            <select id="searchProvinsi" name="provinsi" class="form-control">
+                                <option value="">Semua Provinsi</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="searchKabupaten">Kabupaten/Kota</label>
+                            <select id="searchKabupaten" name="kabupaten" class="form-control">
+                                <option value="">Semua Kabupaten/Kota</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="searchKecamatan">Kecamatan</label>
+                            <select id="searchKecamatan" name="kecamatan" class="form-control">
+                                <option value="">Semua Kecamatan</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="form-group">
+                            <label for="searchHargaMin">Harga Minimal</label>
+                            <select id="searchHargaMin" name="hargaMin" class="form-control">
+                                <option value="">Rp 0</option>
+                                <option value="100000000">Rp 100 Juta</option>
+                                <option value="150000000">Rp 150 Juta</option>
+                                <option value="200000000">Rp 200 Juta</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="searchHargaMax">Harga Maksimal</label>
+                            <select id="searchHargaMax" name="hargaMax" class="form-control">
+                                <option value="">Tidak Terbatas</option>
+                                <option value="200000000">Rp 200 Juta</option>
+                                <option value="250000000">Rp 250 Juta</option>
+                                <option value="300000000">Rp 300 Juta</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="searchUnit">Sisa Unit</label>
+                            <select id="searchUnit" name="unit" class="form-control">
+                                <option value="">Semua</option>
+                                <option value="1">1+ Unit</option>
+                                <option value="5">5+ Unit</option>
+                                <option value="10">10+ Unit</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter"></i> Terapkan Filter
+                        </button>
+                        <button type="reset" class="btn btn-outline" id="resetFilters">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Results Summary -->
+            <div class="results-summary">
+                <span id="resultsCount">Memuat hasil...</span>
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="map">
+                        <i class="fas fa-map"></i> Peta
+                    </button>
+                    <button class="view-btn" data-view="list">
+                        <i class="fas fa-list"></i> List
+                    </button>
+                </div>
+            </div>
+
+            <!-- Map Container -->
+            <section class="map-container" id="mapContainer">
+                <div id="map"></div>
+            </section>
+
+            <!-- Search Results -->
+            <section class="search-results" id="searchResultsContainer" style="display: none;">
+                <div class="properties-grid" id="searchResults">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Memuat properti...
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h3>RumahSubsidi.id</h3>
+                    <p>Platform marketplace resmi untuk rumah subsidi di Indonesia. Menghubungkan calon pembeli dengan pengembang terpercaya.</p>
+                </div>
+                <div class="footer-column">
+                    <h3>Navigasi</h3>
+                    <ul>
+                        <li><a href="/">Beranda</a></li>
+                        <li><a href="search.html">Cari Rumah</a></li>
+                        <li><a href="#cara-beli">Cara Beli</a></li>
+                        <li><a href="#syarat">Syarat & Ketentuan</a></li>
+                        <li><a href="#bantuan">Bantuan</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>Kontak</h3>
+                    <ul>
+                        <li><a href="mailto:info@rumahsubsidi.id">Email: info@rumahsubsidi.id</a></li>
+                        <li><a href="tel:1500123">Telepon: 1500-123</a></li>
+                        <li>Alamat: Gedung Tapera Indonesia</li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>Mitra</h3>
+                    <ul>
+                        <li><a href="https://tapera.go.id" target="_blank" rel="noopener">Tapera</a></li>
+                        <li><a href="https://pu.go.id" target="_blank" rel="noopener">Kementerian PUPR</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                &copy; 2025 RumahSubsidi.id - All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Google Maps API - GANTI YOUR_API_KEY dengan API key Anda -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+    
+    <!-- Scripts -->
+    <script src="js/search.js" defer></script>
+</body>
+</html>
