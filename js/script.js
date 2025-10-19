@@ -3,6 +3,13 @@
  * Optimized for Performance & Security
  */
 
+// Cache Configuration
+const CACHE_CONFIG = {
+  DEFAULT_TTL_MS: 5 * 60 * 1000,      // 5 minutes - Time To Live for cache
+  MAX_CACHE_SIZE: 100,                 // Maximum number of cached items
+  CLEAR_INTERVAL_MS: 10 * 60 * 1000   // 10 minutes - Auto clear old cache
+};
+
 // API Configuration
 const API_CONFIG = {
   baseURL: 'https://sikumbang.tapera.go.id',
@@ -11,17 +18,29 @@ const API_CONFIG = {
     provinsi: '/ajax/wilayah/get-provinsi',
     kabupaten: '/ajax/wilayah/get-kabupaten'
   },
-  cacheTime: 5 * 60 * 1000 // 5 minutes
+  cacheTime: CACHE_CONFIG.DEFAULT_TTL_MS
 };
 
 // Cache Manager
 class CacheManager {
-  constructor(ttl = 300000) {
+  constructor(ttl = CACHE_CONFIG.DEFAULT_TTL_MS) {
     this.cache = new Map();
     this.ttl = ttl;
+    this.maxSize = CACHE_CONFIG.MAX_CACHE_SIZE;
+
+    // Auto-clear expired cache periodically
+    this.startAutoClear();
   }
 
   set(key, value) {
+    // Check cache size limit
+    if (this.cache.size >= this.maxSize) {
+      // Remove oldest entry
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+      console.log(`Cache full, removed oldest: ${firstKey}`);
+    }
+
     this.cache.set(key, {
       data: value,
       timestamp: Date.now()
@@ -31,27 +50,120 @@ class CacheManager {
   get(key) {
     const item = this.cache.get(key);
     if (!item) return null;
-    
+
     if (Date.now() - item.timestamp > this.ttl) {
       this.cache.delete(key);
       return null;
     }
-    
+
     return item.data;
   }
 
   clear() {
     this.cache.clear();
+    console.log('Cache cleared');
+  }
+
+  // Auto-clear expired entries
+  startAutoClear() {
+    setInterval(() => {
+      const now = Date.now();
+      let clearedCount = 0;
+
+      for (const [key, value] of this.cache.entries()) {
+        if (now - value.timestamp > this.ttl) {
+          this.cache.delete(key);
+          clearedCount++;
+        }
+      }
+
+      if (clearedCount > 0) {
+        console.log(`Auto-cleared ${clearedCount} expired cache entries`);
+      }
+    }, CACHE_CONFIG.CLEAR_INTERVAL_MS);
   }
 }
 
-const cache = new CacheManager(API_CONFIG.cacheTime);
+const cache = new CacheManager();
 
 // Security: Input Sanitization
 function sanitizeInput(input) {
   const div = document.createElement('div');
   div.textContent = input;
   return div.innerHTML;
+}
+
+// Centralized Error Handler
+class ErrorHandler {
+  static handle(error, context = 'Unknown') {
+    // Log error dengan context untuk debugging
+    console.error(`[${context}] Error:`, error);
+
+    // Get user-friendly message
+    const userMessage = this.getUserMessage(error, context);
+
+    // Show notification to user
+    showNotification(userMessage, 'error');
+
+    // Optional: Send error to monitoring service (uncomment jika diperlukan)
+    // this.logToServer(error, context);
+
+    return userMessage;
+  }
+
+  static getUserMessage(error, context) {
+    // Map technical errors ke user-friendly messages
+    const errorMessages = {
+      'LoadProvinsi': 'Gagal memuat data provinsi. Silakan refresh halaman.',
+      'LoadKabupaten': 'Gagal memuat data kabupaten. Silakan pilih provinsi lagi.',
+      'LoadProperties': 'Gagal memuat data properti. Silakan coba lagi.',
+      'LoadStatistics': 'Gagal memuat statistik.',
+      'NetworkError': 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
+      'TimeoutError': 'Request timeout. Server terlalu lama merespon.',
+      'APIError': 'Terjadi kesalahan pada server. Silakan coba lagi nanti.'
+    };
+
+    // Check for specific error types
+    if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
+      return errorMessages.NetworkError;
+    }
+
+    if (error.message?.includes('timeout')) {
+      return errorMessages.TimeoutError;
+    }
+
+    if (error.message?.includes('HTTP error')) {
+      return errorMessages.APIError;
+    }
+
+    // Return context-specific message or generic error
+    return errorMessages[context] || `Terjadi kesalahan: ${error.message}`;
+  }
+
+  // Optional: Log errors to server for monitoring
+  static async logToServer(error, context) {
+    try {
+      const errorData = {
+        message: error.message,
+        stack: error.stack,
+        context: context,
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+        timestamp: new Date().toISOString()
+      };
+
+      // Uncomment jika ada endpoint untuk error logging
+      // await fetch('/api/log-error', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(errorData)
+      // });
+
+      console.log('Error logged:', errorData);
+    } catch (logError) {
+      console.error('Failed to log error:', logError);
+    }
+  }
 }
 
 // Format Number
@@ -102,7 +214,7 @@ async function loadProvinsi() {
 
   try {
     const data = await apiCall(API_CONFIG.endpoints.provinsi, 'provinsi_list');
-    
+
     data.sort((a, b) => a.namaWilayah.localeCompare(b.namaWilayah));
 
     select.innerHTML = '<option value="">Pilih Provinsi</option>';
@@ -114,9 +226,8 @@ async function loadProvinsi() {
       select.appendChild(option);
     });
   } catch (error) {
-    console.error("Error loading provinsi:", error);
     select.innerHTML = '<option value="">Gagal memuat data</option>';
-    showNotification('Gagal memuat data provinsi. Silakan refresh halaman.', 'error');
+    ErrorHandler.handle(error, 'LoadProvinsi');
   }
 }
 
@@ -150,8 +261,8 @@ async function loadKabupaten(provinsiCode) {
       select.appendChild(option);
     });
   } catch (error) {
-    console.error("Error loading kabupaten:", error);
     select.innerHTML = '<option value="">Gagal memuat data</option>';
+    ErrorHandler.handle(error, 'LoadKabupaten');
   }
 }
 
@@ -231,6 +342,28 @@ async function loadProperties() {
   });
 }
 
+// Create optimized image element with multiple formats
+function createOptimizedImage(src, alt) {
+  const imageUrl = sanitizeInput(src);
+  const altText = sanitizeInput(alt);
+
+  // Convert image URL to support multiple formats
+  // Note: Only works if server supports format conversion
+  const baseUrl = imageUrl.replace(/\.(jpg|jpeg|png)$/i, '');
+
+  return `
+    <picture>
+      <source srcset="${baseUrl}.avif" type="image/avif" onerror="this.remove()">
+      <source srcset="${baseUrl}.webp" type="image/webp" onerror="this.remove()">
+      <img src="${imageUrl}"
+           alt="${altText}"
+           class="property-image"
+           loading="lazy"
+           decoding="async">
+    </picture>
+  `;
+}
+
 // Create Property Card
 function createPropertyCard(property, tipeSubsidi) {
   const card = document.createElement("article");
@@ -238,10 +371,7 @@ function createPropertyCard(property, tipeSubsidi) {
   card.setAttribute("data-id", property.idLokasi);
 
   card.innerHTML = `
-    <img src="${sanitizeInput(property.foto[0])}" 
-         alt="${sanitizeInput(property.namaPerumahan)}" 
-         class="property-image"
-         loading="lazy">
+    ${createOptimizedImage(property.foto[0], property.namaPerumahan)}
     <div class="property-content">
       <div class="property-price">${formatRupiah(tipeSubsidi.harga)}</div>
       <h3 class="property-title">${sanitizeInput(property.namaPerumahan)}</h3>
@@ -262,7 +392,7 @@ function createPropertyCard(property, tipeSubsidi) {
       </div>
       <div class="property-footer">
         <div class="developer">${sanitizeInput(property.pengembang.nama)}</div>
-        <a href="detail.html?id=${encodeURIComponent(property.idLokasi)}" 
+        <a href="detail.html?id=${encodeURIComponent(property.idLokasi)}"
            class="btn btn-primary">
           Detail
         </a>
@@ -333,7 +463,7 @@ function setupEventListeners() {
 // Initialize Application
 async function init() {
   console.log('Initializing RumahSubsidi.id...');
-  
+
   try {
     await Promise.all([
       loadProvinsi(),
@@ -345,8 +475,7 @@ async function init() {
 
     console.log('Application initialized successfully');
   } catch (error) {
-    console.error('Initialization error:', error);
-    showNotification('Terjadi kesalahan saat memuat halaman', 'error');
+    ErrorHandler.handle(error, 'Initialization');
   }
 }
 

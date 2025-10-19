@@ -50,7 +50,9 @@ app.post('/api/cek-subsidi', async (req, res) => {
     });
   }
 
-  console.log(`Checking subsidi for NIK: ${nik}`);
+  // Mask NIK untuk privacy (only show first 4 digits)
+  const maskedNik = `${nik.substring(0, 4)}${'*'.repeat(12)}`;
+  console.log(`Checking subsidi for NIK: ${maskedNik}`);
 
   try {
     // Create form data

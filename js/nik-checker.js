@@ -370,8 +370,13 @@ function initNikChecker() {
             try {
                 await checkSubsidi(nikValue);
             } catch (error) {
-                console.error('Error checking subsidi:', error);
-                showError('Terjadi kesalahan. Silakan coba lagi.');
+                // Use ErrorHandler if available, otherwise fallback
+                if (typeof ErrorHandler !== 'undefined') {
+                    ErrorHandler.handle(error, 'CheckSubsidi');
+                } else {
+                    console.error('Error checking subsidi:', error);
+                    showError('Terjadi kesalahan. Silakan coba lagi.');
+                }
             } finally {
                 submitBtn.textContent = originalText;
                 submitBtn.disabled = false;
