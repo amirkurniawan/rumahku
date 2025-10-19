@@ -6,8 +6,10 @@
 // API Configuration
 const API_CONFIG = {
   baseURL: 'https://sikumbang.tapera.go.id',
+  proxyURL: 'http://localhost:3000',
   endpoints: {
-    search: '/ajax/lokasi/search'
+    search: '/ajax/lokasi/search',
+    detail: '/api/detail-perumahan' // Proxy endpoint
   },
   cacheTime: 5 * 60 * 1000
 };
@@ -63,12 +65,21 @@ async function apiCall(endpoint, cacheKey = null) {
   }
 
   try {
-    const response = await fetch(API_CONFIG.baseURL + endpoint);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    
+    // IMPORTANT: Use 'reload' to bypass browser disk cache
+    // This prevents using cached 301/302 redirect responses
+    const response = await fetch(API_CONFIG.baseURL + endpoint, {
+      cache: 'reload',  // Always fetch fresh from server
+      redirect: 'follow'  // Follow redirects automatically
+    });
+
+    if (!response.ok) {
+      console.error(`API Error: ${response.status} ${response.statusText}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     const data = await response.json();
     if (cacheKey) cache.set(cacheKey, data);
-    
+
     return data;
   } catch (error) {
     console.error('API Error:', error);
@@ -76,37 +87,91 @@ async function apiCall(endpoint, cacheKey = null) {
   }
 }
 
-// Get Property by ID
+// Get Property by ID (via Proxy - for complete data)
 async function getPropertyById(propertyId) {
+  console.log('getPropertyById called with:', propertyId);
+
   try {
-    const data = await apiCall(
-      `${API_CONFIG.endpoints.search}?sort=terdekat&page=1&limit=100`,
-      'all_properties'
-    );
+    console.log('Calling Proxy API for detail...');
 
-    if (!data || !data.data) {
-      throw new Error('No data received');
+    // Use proxy endpoint to get complete data from Sikumbang
+    const response = await fetch(`${API_CONFIG.proxyURL}${API_CONFIG.endpoints.detail}/${propertyId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log('Proxy Response status:', response.status);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      console.error('Proxy Error:', errorData);
+      throw new Error(errorData?.details || `HTTP error! status: ${response.status}`);
     }
 
-    const property = data.data.find(p => p.idLokasi === propertyId);
-    if (!property) {
-      throw new Error('Property not found');
+    const result = await response.json();
+    console.log('Proxy Response received:', {
+      success: result.success,
+      hasData: !!result.data
+    });
+
+    if (!result.success || !result.data) {
+      console.error('❌ Proxy returned unsuccessful response:', result);
+      throw new Error('No data received from proxy');
     }
 
-    return property;
+    console.log('🔍 Full property data:', result.data);
+    console.log('📊 Property summary:', {
+      namaPerumahan: result.data.namaPerumahan,
+      tipesCount: result.data.tipes?.length || 0,
+      fotosCount: result.data.fotos?.length || 0,
+      hasKelurahan: !!result.data.kelurahan,
+      hasKabupaten: !!result.data.kabupaten,
+      dataKeys: Object.keys(result.data).join(', ')
+    });
+
+    return result.data;
   } catch (error) {
-    console.error('Error getting property:', error);
+    console.error('Error in getPropertyById:', error);
+
+    // Check if proxy server is running
+    if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
+      throw new Error('⚠️ Proxy server belum berjalan!\n\nSilakan jalankan: node proxy-server.js');
+    }
+
     throw error;
   }
 }
 
 // Load Property Detail
 async function loadPropertyDetail(propertyId) {
+  console.log('=== DETAIL.JS DEBUG START ===');
+  console.log('Property ID:', propertyId);
+  console.log('Timestamp:', new Date().toISOString());
+
   try {
+    console.log('Step 1: Fetching property data...');
     const property = await getPropertyById(propertyId);
-    const tipeSubsidi = property.tipeRumah.find(t => t.status === 'subsidi');
+    console.log('Step 2: Property found:', property ? 'YES' : 'NO');
+
+    if (!property) {
+      console.error('Property is null or undefined!');
+      throw new Error('Property not found');
+    }
+
+    console.log('Step 3: Property data:', {
+      namaPerumahan: property.namaPerumahan,
+      tipesCount: property.tipes?.length || 0,
+      fotosCount: property.fotos?.length || 0
+    });
+
+    // Note: Sikumbang uses "tipes" not "tipeRumah"
+    const tipeSubsidi = property.tipes?.find(t => t.status === 'subsidi');
+    console.log('Step 4: Subsidy type found:', tipeSubsidi ? 'YES' : 'NO');
 
     if (!tipeSubsidi) {
+      console.error('No subsidy type found in tipes:', property.tipes);
       throw new Error('No subsidy type found');
     }
 
@@ -115,7 +180,7 @@ async function loadPropertyDetail(propertyId) {
 
     // Update Basic Info
     document.getElementById('detailTitle').textContent = sanitizeInput(property.namaPerumahan);
-    document.getElementById('detailLocation').textContent = 
+    document.getElementById('detailLocation').textContent =
       `${sanitizeInput(property.wilayah.kelurahan)}, ${sanitizeInput(property.wilayah.kecamatan)}, ${sanitizeInput(property.wilayah.kabupaten)}`;
     document.getElementById('detailPrice').textContent = formatRupiah(tipeSubsidi.harga);
 
@@ -141,49 +206,116 @@ async function loadPropertyDetail(propertyId) {
     updateDeveloperInfo(property);
 
   } catch (error) {
-    console.error('Error loading property detail:', error);
+    console.error('=== ERROR IN LOAD PROPERTY DETAIL ===');
+    console.error('Error:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('=== END ERROR ===');
     showError('Properti tidak ditemukan atau terjadi kesalahan.');
   }
+
+  console.log('=== DETAIL.JS DEBUG END ===');
 }
 
-// Update Gallery
+// Update Gallery (with fotoTampak and fotoDenah)
 function updateGallery(property) {
   const mainImage = document.getElementById('mainImage');
   const thumbnailContainer = document.getElementById('thumbnailContainer');
+  const baseURL = API_CONFIG.baseURL;
 
-  if (property.foto && property.foto.length > 0) {
-    mainImage.src = sanitizeInput(property.foto[0]);
+  // Collect all photos: foto object + fotoTampak + fotoDenah from subsidy type
+  const allPhotos = [];
+
+  // Add photos from foto object (fotoGerbang, fotoTengah, fotoContoh)
+  if (property.foto) {
+    if (property.foto.fotoGerbang) {
+      const url = property.foto.fotoGerbang.startsWith('http')
+        ? property.foto.fotoGerbang
+        : `${baseURL}${property.foto.fotoGerbang}`;
+      allPhotos.push({ url, type: 'gerbang', label: 'Foto Gerbang' });
+    }
+    if (property.foto.fotoTengah) {
+      const url = property.foto.fotoTengah.startsWith('http')
+        ? property.foto.fotoTengah
+        : `${baseURL}${property.foto.fotoTengah}`;
+      allPhotos.push({ url, type: 'tengah', label: 'Foto Tengah' });
+    }
+    if (property.foto.fotoContoh) {
+      const url = property.foto.fotoContoh.startsWith('http')
+        ? property.foto.fotoContoh
+        : `${baseURL}${property.foto.fotoContoh}`;
+      allPhotos.push({ url, type: 'contoh', label: 'Foto Contoh' });
+    }
+  }
+
+  // Add fotoTampak and fotoDenah from subsidy type
+  const tipeSubsidi = property.tipes?.find(t => t.status === 'subsidi');
+  if (tipeSubsidi) {
+    if (tipeSubsidi.fotoTampak) {
+      const url = tipeSubsidi.fotoTampak.startsWith('http')
+        ? tipeSubsidi.fotoTampak
+        : `${baseURL}${tipeSubsidi.fotoTampak}`;
+      allPhotos.push({ url, type: 'tampak', label: 'Foto Tampak' });
+    }
+    if (tipeSubsidi.fotoDenah) {
+      const url = tipeSubsidi.fotoDenah.startsWith('http')
+        ? tipeSubsidi.fotoDenah
+        : `${baseURL}${tipeSubsidi.fotoDenah}`;
+      allPhotos.push({ url, type: 'denah', label: 'Denah Rumah' });
+    }
+  }
+
+  console.log('Total photos:', allPhotos.length);
+
+  if (allPhotos.length > 0) {
+    // Set main image
+    mainImage.src = sanitizeInput(allPhotos[0].url);
     mainImage.alt = sanitizeInput(property.namaPerumahan);
     thumbnailContainer.innerHTML = '';
 
-    property.foto.forEach((foto, index) => {
+    // Create thumbnails
+    allPhotos.forEach((photo, index) => {
       const thumbnail = document.createElement('img');
-      thumbnail.src = sanitizeInput(foto);
-      thumbnail.alt = `${sanitizeInput(property.namaPerumahan)} - Foto ${index + 1}`;
+      thumbnail.src = sanitizeInput(photo.url);
+
+      // Add descriptive alt text
+      const altText = `${sanitizeInput(property.namaPerumahan)} - ${photo.label}`;
+      thumbnail.alt = altText;
+
       thumbnail.className = `thumbnail ${index === 0 ? 'active' : ''}`;
       thumbnail.loading = 'lazy';
-      
+
       thumbnail.addEventListener('click', () => {
-        mainImage.src = sanitizeInput(foto);
+        mainImage.src = sanitizeInput(photo.url);
         document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
         thumbnail.classList.add('active');
       });
 
       thumbnailContainer.appendChild(thumbnail);
     });
+  } else {
+    // No photos available
+    mainImage.src = '/images/placeholder.jpg';
+    mainImage.alt = 'No image available';
   }
 }
 
 // Update Description
 function updateDescription(property, tipeSubsidi) {
   const description = document.getElementById('propertyDescription');
-  description.textContent = `${sanitizeInput(property.namaPerumahan)} adalah perumahan subsidi ${property.jenisPerumahan.toLowerCase()} yang terletak di ${sanitizeInput(property.wilayah.kelurahan)}, ${sanitizeInput(property.wilayah.kecamatan)}, ${sanitizeInput(property.wilayah.kabupaten)}, ${sanitizeInput(property.wilayah.provinsi)}. Perumahan ini dikembangkan oleh ${sanitizeInput(property.pengembang.nama)} dan memiliki ${property.jumlahUnit} unit rumah subsidi yang tersedia.`;
+  const jenisPerumahan = property.jenisPerumahan === 0 ? 'rumah tapak' : 'rusun';
+  const jumlahUnit = property.count?.subsidi || 0;
+
+  description.textContent = `${sanitizeInput(property.namaPerumahan)} adalah perumahan subsidi ${jenisPerumahan} yang terletak di ${sanitizeInput(property.wilayah.kelurahan)}, ${sanitizeInput(property.wilayah.kecamatan)}, ${sanitizeInput(property.wilayah.kabupaten)}, ${sanitizeInput(property.wilayah.provinsi)}. Perumahan ini dikembangkan oleh ${sanitizeInput(property.pengembang.nama)} dan memiliki ${jumlahUnit} unit rumah subsidi yang tersedia.`;
 }
 
 // Update Specifications
 function updateSpecifications(property, tipeSubsidi) {
   const specsGrid = document.getElementById('specsGrid');
   specsGrid.innerHTML = '';
+
+  const jenisPerumahan = property.jenisPerumahan === 0 ? 'Rumah Tapak' : 'Rusun';
+  const sisaUnit = property.count?.subsidi || 0;
 
   const specs = [
     { label: 'Tipe Rumah', value: sanitizeInput(tipeSubsidi.nama) },
@@ -192,8 +324,8 @@ function updateSpecifications(property, tipeSubsidi) {
     { label: 'Kamar Tidur', value: tipeSubsidi.kamarTidur },
     { label: 'Kamar Mandi', value: tipeSubsidi.kamarMandi },
     { label: 'Jumlah Lantai', value: tipeSubsidi.jumlahLantai },
-    { label: 'Jenis Perumahan', value: sanitizeInput(property.jenisPerumahan) },
-    { label: 'Sisa Unit', value: property.jumlahUnit }
+    { label: 'Jenis Perumahan', value: jenisPerumahan },
+    { label: 'Sisa Unit', value: sisaUnit }
   ];
 
   specs.forEach(spec => {
@@ -243,8 +375,8 @@ function updateContactInfo(property) {
   const contactInfo = document.getElementById('contactInfo');
   contactInfo.innerHTML = '';
 
-  if (property.kantorPemasaran && property.kantorPemasaran.length > 0) {
-    const kantor = property.kantorPemasaran[0];
+  if (property.kantors && property.kantors.length > 0) {
+    const kantor = property.kantors[0];
 
     const contactItems = [
       { icon: 'fas fa-map-marker-alt', label: 'Alamat', value: kantor.alamat },
@@ -273,8 +405,8 @@ function updateContactInfo(property) {
 
 // Update Developer Info
 function updateDeveloperInfo(property) {
-  document.getElementById('developerName').textContent = sanitizeInput(property.pengembang.nama);
-  document.getElementById('developerAsosiasi').textContent = sanitizeInput(property.pengembang.asosiasi);
+  document.getElementById('developerName').textContent = sanitizeInput(property.pengembang?.nama || '-');
+  document.getElementById('developerAsosiasi').textContent = sanitizeInput(property.pengembang?.asosiasi?.nama || '-');
 }
 
 // Show Error

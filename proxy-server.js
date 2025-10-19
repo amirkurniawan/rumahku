@@ -45,9 +45,10 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/', (req, res) => {
   res.json({
     status: 'running',
-    message: 'Proxy server for PKP API is running',
+    message: 'Proxy server for PKP API and Sikumbang is running',
     endpoints: {
-      cekSubsidi: 'POST /api/cek-subsidi'
+      cekSubsidi: 'POST /api/cek-subsidi',
+      detailPerumahan: 'GET /api/detail-perumahan/:id'
     }
   });
 });
@@ -120,6 +121,90 @@ app.post('/api/cek-subsidi', async (req, res) => {
       });
     } else {
       // Something else went wrong
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+        details: error.message
+      });
+    }
+  }
+});
+
+// Proxy endpoint untuk detail perumahan
+app.get('/api/detail-perumahan/:id', async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({
+      success: false,
+      error: 'ID perumahan is required'
+    });
+  }
+
+  console.log(`[${getTimestampGMT7()}] 🏠 Fetching detail perumahan: ${id}`);
+
+  try {
+    // Fetch HTML page from Sikumbang
+    const url = `https://sikumbang.tapera.go.id/lokasi-perumahan/${id}`;
+    console.log(`[${getTimestampGMT7()}] 📡 Requesting: ${url}`);
+
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7'
+      },
+      timeout: 30000
+    });
+
+    const html = response.data;
+
+    // Extract window.SIKUMBANG_DATA from HTML
+    // Pattern: window.SIKUMBANG_DATA={...}
+    const regex = /window\.SIKUMBANG_DATA\s*=\s*({[\s\S]*?});/;
+    const match = html.match(regex);
+
+    if (!match || !match[1]) {
+      console.error(`[${getTimestampGMT7()}] ❌ window.SIKUMBANG_DATA not found in HTML`);
+      return res.status(404).json({
+        success: false,
+        error: 'Data not found in page',
+        details: 'window.SIKUMBANG_DATA tidak ditemukan'
+      });
+    }
+
+    // Parse JSON data
+    const jsonString = match[1];
+    const data = JSON.parse(jsonString);
+
+    console.log(`[${getTimestampGMT7()}] ✅ Success! Extracted SIKUMBANG_DATA`);
+    console.log(`[${getTimestampGMT7()}] 📊 Data: ${data.namaPerumahan || 'Unknown'}`);
+
+    // Return parsed data
+    res.json({
+      success: true,
+      data: data
+    });
+
+  } catch (error) {
+    console.error(`[${getTimestampGMT7()}] ❌ Error fetching detail perumahan:`, error.message);
+
+    if (error.response) {
+      console.error(`[${getTimestampGMT7()}] Status:`, error.response.status);
+
+      res.status(error.response.status).json({
+        success: false,
+        error: 'API error',
+        details: error.message,
+        status: error.response.status
+      });
+    } else if (error.request) {
+      res.status(503).json({
+        success: false,
+        error: 'No response from Sikumbang',
+        details: error.message
+      });
+    } else {
       res.status(500).json({
         success: false,
         error: 'Internal server error',

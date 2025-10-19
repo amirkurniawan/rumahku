@@ -1,5 +1,48 @@
 # 📋 Changelog - RumahSubsidi.id
 
+## [1.1.1] - 2025-10-19
+
+### 🐛 Critical Bug Fixes
+
+#### Browser Cache 301 Redirect Issue (FIXED)
+**Files Modified:**
+- [js/detail.js:66-71](js/detail.js#L66-L71)
+- [js/script.js:192-195](js/script.js#L192-L195)
+- [js/search.js:77-80](js/search.js#L77-L80)
+
+**Problem:**
+- Error: `301 Moved Permanently (from disk cache)` pada detail page
+- URL seperti `/detail.html?id=SBM3620012022T001` mengembalikan halaman tidak ditemukan
+- Data sebenarnya ada, tapi browser menggunakan cached 301 redirect
+
+**Root Cause:**
+Browser permanently cache 301 redirect responses (HTTP→HTTPS, www→non-www) di **disk cache**. Setiap request berikutnya tidak hit server, langsung pakai cached 301 response, menyebabkan data tidak pernah ter-fetch.
+
+**Solution:**
+Tambahkan `cache: 'reload'` option pada semua fetch API calls untuk bypass browser disk cache:
+
+```javascript
+// ❌ BEFORE (Wrong - uses browser cache)
+const response = await fetch(API_CONFIG.baseURL + endpoint);
+
+// ✅ AFTER (Fixed - bypass browser cache)
+const response = await fetch(API_CONFIG.baseURL + endpoint, {
+  cache: 'reload',       // Always fetch fresh from server
+  redirect: 'follow'     // Follow redirects automatically
+});
+```
+
+**User Impact:**
+- ✅ No more "301 from disk cache" errors
+- ✅ Always fetch fresh data from API
+- ✅ Application cache (CacheManager 5 min TTL) masih berfungsi normal
+- ✅ Browser disk cache di-bypass untuk prevent stale redirects
+
+**Immediate Fix untuk User:**
+Hard refresh browser: `Ctrl+Shift+R` (Windows) atau `Cmd+Shift+R` (Mac)
+
+---
+
 ## [1.1.0] - 2025-10-19
 
 ### 🔒 Security Improvements

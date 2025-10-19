@@ -3,7 +3,7 @@
  * Implements 5-minute caching strategy
  */
 
-const CACHE_NAME = 'rumahsubsidi-v1';
+const CACHE_NAME = 'rumahsubsidi-v2'; // Updated to v2 to respect cache mode
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // Assets to cache immediately
@@ -74,14 +74,41 @@ self.addEventListener('fetch', (event) => {
 // Handle API requests with 5-minute cache
 async function handleAPIRequest(request) {
   const cache = await caches.open(CACHE_NAME);
-  
+
   try {
+    // IMPORTANT: Respect cache mode from application code
+    // If request has cache: 'reload' or 'no-cache', bypass cache
+    if (request.cache === 'reload' || request.cache === 'no-cache' || request.cache === 'no-store') {
+      console.log(`Service Worker: Bypassing cache (mode: ${request.cache})`);
+      const networkResponse = await fetch(request);
+
+      // Don't cache reload requests
+      if (request.cache === 'reload') {
+        return networkResponse;
+      }
+
+      // For no-cache, still cache the response for offline fallback
+      const responseToCache = networkResponse.clone();
+      const headers = new Headers(responseToCache.headers);
+      headers.append('sw-cached-time', new Date().toISOString());
+
+      const cachedResponseWithTime = new Response(await responseToCache.blob(), {
+        status: responseToCache.status,
+        statusText: responseToCache.statusText,
+        headers: headers
+      });
+
+      await cache.put(request, cachedResponseWithTime);
+      return networkResponse;
+    }
+
+    // Check cached response
     const cachedResponse = await cache.match(request);
-    
+
     if (cachedResponse) {
       const cachedTime = new Date(cachedResponse.headers.get('sw-cached-time'));
       const now = new Date();
-      
+
       if (now - cachedTime < CACHE_DURATION) {
         console.log('Service Worker: Returning cached API response');
         return cachedResponse;
@@ -90,28 +117,28 @@ async function handleAPIRequest(request) {
 
     console.log('Service Worker: Fetching fresh API data');
     const networkResponse = await fetch(request);
-    
+
     const responseToCache = networkResponse.clone();
     const headers = new Headers(responseToCache.headers);
     headers.append('sw-cached-time', new Date().toISOString());
-    
+
     const cachedResponseWithTime = new Response(await responseToCache.blob(), {
       status: responseToCache.status,
       statusText: responseToCache.statusText,
       headers: headers
     });
-    
+
     await cache.put(request, cachedResponseWithTime);
-    
+
     return networkResponse;
   } catch (error) {
     console.error('Service Worker: Fetch failed', error);
-    
+
     const cachedResponse = await cache.match(request);
     if (cachedResponse) {
       return cachedResponse;
     }
-    
+
     return new Response('Network error', {
       status: 503,
       statusText: 'Service Unavailable'

@@ -187,19 +187,25 @@ async function apiCall(endpoint, cacheKey = null) {
   }
 
   try {
-    const response = await fetch(API_CONFIG.baseURL + endpoint);
-    
+    // IMPORTANT: Use 'reload' to bypass browser disk cache
+    // This prevents using cached 301/302 redirect responses
+    const response = await fetch(API_CONFIG.baseURL + endpoint, {
+      cache: 'reload',  // Always fetch fresh from server
+      redirect: 'follow'  // Follow redirects automatically
+    });
+
     if (!response.ok) {
+      console.error(`API Error: ${response.status} ${response.statusText}`);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     const data = await response.json();
-    
+
     if (cacheKey) {
       cache.set(cacheKey, data);
       console.log(`Cache stored: ${cacheKey}`);
     }
-    
+
     return data;
   } catch (error) {
     console.error('API Error:', error);
