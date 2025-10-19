@@ -349,12 +349,13 @@ function createOptimizedImage(src, alt) {
 
   // Convert image URL to support multiple formats
   // Note: Only works if server supports format conversion
-  const baseUrl = imageUrl.replace(/\.(jpg|jpeg|png)$/i, '');
+  const baseUrl = imageUrl;
 
   return `
     <picture>
-      <source srcset="${baseUrl}.avif" type="image/avif" onerror="this.remove()">
-      <source srcset="${baseUrl}.webp" type="image/webp" onerror="this.remove()">
+     
+     
+      <source srcset="${baseUrl}" type="image/jpg" onerror="this.remove()">
       <img src="${imageUrl}"
            alt="${altText}"
            class="property-image"
