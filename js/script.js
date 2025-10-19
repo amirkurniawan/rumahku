@@ -456,13 +456,33 @@ function setupEventListeners() {
   const searchForm = document.getElementById('heroSearchForm');
   if (searchForm) {
     searchForm.addEventListener('submit', function(e) {
-      const provinsi = document.getElementById('provinsi').value;
-      const kabupaten = document.getElementById('kabupaten').value;
-      
-      if (!provinsi && !kabupaten) {
-        e.preventDefault();
+      e.preventDefault(); // Prevent default form submission
+
+      const provinsiSelect = document.getElementById('provinsi');
+      const kabupatenSelect = document.getElementById('kabupaten');
+
+      const provinsiCode = provinsiSelect.value;
+      const kabupatenCode = kabupatenSelect.value;
+
+      // Validation
+      if (!provinsiCode && !kabupatenCode) {
         showNotification('Silakan pilih provinsi atau kabupaten', 'error');
+        return;
       }
+
+      // Determine which kodeWilayah to use
+      // Priority: kabupaten > provinsi (more specific wins)
+      const kodeWilayah = kabupatenCode || provinsiCode;
+
+      // Get selected text for display
+      const selectedText = kabupatenCode
+        ? kabupatenSelect.options[kabupatenSelect.selectedIndex].text
+        : provinsiSelect.options[provinsiSelect.selectedIndex].text;
+
+      // Redirect to search.html with kodeWilayah parameter
+      const searchUrl = `search.html?kodeWilayah=${encodeURIComponent(kodeWilayah)}&nama=${encodeURIComponent(selectedText)}`;
+      console.log('Redirecting to:', searchUrl);
+      window.location.href = searchUrl;
     });
   }
 }

@@ -232,23 +232,32 @@ function createInfoWindowContent(property, tipeSubsidi) {
 }
 
 // Load Properties
-async function loadProperties() {
+async function loadProperties(kodeWilayah = null) {
   try {
-    const data = await apiCall(
-      `${API_CONFIG.endpoints.search}?sort=terdekat&page=1&limit=100`,
-      'search_properties'
-    );
+    // Build API URL with optional kodeWilayah filter
+    let apiUrl = `${API_CONFIG.endpoints.search}?selectedSearch=wilayah&skalaPerumahan=semua&sort=terbaru&searchBy=nama-perumahan&page=1&limit=100`;
+
+    if (kodeWilayah) {
+      apiUrl += `&kodeWilayah=${kodeWilayah}`;
+      console.log(`🔍 Loading properties for kodeWilayah: ${kodeWilayah}`);
+    }
+
+    const cacheKey = kodeWilayah ? `search_${kodeWilayah}` : 'search_properties';
+
+    const data = await apiCall(apiUrl, cacheKey);
 
     if (!data || !data.data) {
       throw new Error('No data received');
     }
 
-    allProperties = data.data.filter(p => 
+    console.log(`📊 Loaded ${data.data.length} properties`);
+
+    allProperties = data.data.filter(p =>
       p.aktivasi && p.tipeRumah.some(t => t.status === 'subsidi')
     );
 
     filteredProperties = [...allProperties];
-    
+
     addPropertyMarkers(filteredProperties);
     updateResults();
     updateResultsCount();
@@ -429,9 +438,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Parse URL parameters
+  // Parse URL parameters and filter by kodeWilayah if provided
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.has('provinsi')) {
-    document.getElementById('searchProvinsi').value = urlParams.get('provinsi');
+  const kodeWilayah = urlParams.get('kodeWilayah');
+  const namaWilayah = urlParams.get('nama');
+
+  if (kodeWilayah) {
+    console.log(`🔍 Search page loaded with filter: ${namaWilayah} (${kodeWilayah})`);
+
+    // Show filter indicator
+    const filterInfo = document.createElement('div');
+    filterInfo.className = 'filter-indicator';
+    filterInfo.style.cssText = `
+      background: #e3f2fd;
+      border-left: 4px solid #2c7be5;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 4px;
+    `;
+    filterInfo.innerHTML = `
+      <strong>🔍 Filter Aktif:</strong> ${namaWilayah}
+      <a href="search.html" style="margin-left: 1rem; color: #2c7be5; text-decoration: underline;">Hapus Filter</a>
+    `;
+
+    const container = document.getElementById('searchResults');
+    if (container) {
+      container.parentElement.insertBefore(filterInfo, container);
+    }
+
+    // Load properties with filter
+    loadProperties(kodeWilayah);
   }
 });
