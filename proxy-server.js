@@ -16,6 +16,26 @@ const cors = require('cors');
 const app = express();
 const PORT = 3000;
 
+// Utility: Get timestamp in GMT+7 (Jakarta/Indonesia)
+function getTimestampGMT7() {
+  const now = new Date();
+
+  // Convert to GMT+7
+  const offsetJakarta = 7 * 60; // GMT+7 in minutes
+  const localOffset = now.getTimezoneOffset(); // Current offset in minutes
+  const jakartaTime = new Date(now.getTime() + (offsetJakarta + localOffset) * 60000);
+
+  // Format: YYYY-MM-DD HH:mm:ss GMT+7
+  const year = jakartaTime.getFullYear();
+  const month = String(jakartaTime.getMonth() + 1).padStart(2, '0');
+  const day = String(jakartaTime.getDate()).padStart(2, '0');
+  const hours = String(jakartaTime.getHours()).padStart(2, '0');
+  const minutes = String(jakartaTime.getMinutes()).padStart(2, '0');
+  const seconds = String(jakartaTime.getSeconds()).padStart(2, '0');
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} GMT+7`;
+}
+
 // Middleware
 app.use(cors()); // Allow all origins
 app.use(express.json());
@@ -52,7 +72,7 @@ app.post('/api/cek-subsidi', async (req, res) => {
 
   // Mask NIK untuk privacy (only show first 4 digits)
   const maskedNik = `${nik.substring(0, 4)}${'*'.repeat(12)}`;
-  console.log(`Checking subsidi for NIK: ${maskedNik}`);
+  console.log(`[${getTimestampGMT7()}] 🔍 Checking subsidi for NIK: ${maskedNik}`);
 
   try {
     // Create form data
@@ -72,18 +92,18 @@ app.post('/api/cek-subsidi', async (req, res) => {
       maxRedirects: 5
     });
 
-    console.log('Success! Got response from PKP API');
+    console.log(`[${getTimestampGMT7()}] ✅ Success! Got response from PKP API`);
 
     // Return HTML response
     res.send(response.data);
 
   } catch (error) {
-    console.error('Error calling PKP API:', error.message);
+    console.error(`[${getTimestampGMT7()}] ❌ Error calling PKP API:`, error.message);
 
     if (error.response) {
       // API returned error response
-      console.error('Status:', error.response.status);
-      console.error('Data:', error.response.data);
+      console.error(`[${getTimestampGMT7()}] Status:`, error.response.status);
+      console.error(`[${getTimestampGMT7()}] Data:`, error.response.data);
 
       res.status(error.response.status).json({
         success: false,
@@ -112,18 +132,18 @@ app.post('/api/cek-subsidi', async (req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log('═══════════════════════════════════════════════════');
-  console.log(`  🚀 Proxy Server Running`);
-  console.log(`  📍 URL: http://localhost:${PORT}`);
-  console.log(`  🔧 API Endpoint: http://localhost:${PORT}/api/cek-subsidi`);
+  console.log(`[${getTimestampGMT7()}] 🚀 Proxy Server Running`);
+  console.log(`[${getTimestampGMT7()}] 📍 URL: http://localhost:${PORT}`);
+  console.log(`[${getTimestampGMT7()}] 🔧 API Endpoint: http://localhost:${PORT}/api/cek-subsidi`);
   console.log('═══════════════════════════════════════════════════');
   console.log('');
-  console.log('Ready to handle requests...');
-  console.log('Press Ctrl+C to stop the server');
+  console.log(`[${getTimestampGMT7()}] ✅ Ready to handle requests...`);
+  console.log(`[${getTimestampGMT7()}] ⚠️  Press Ctrl+C to stop the server`);
   console.log('');
 });
 
 // Graceful shutdown
 process.on('SIGINT', () => {
-  console.log('\n\nShutting down server...');
+  console.log(`\n\n[${getTimestampGMT7()}] 🛑 Shutting down server...`);
   process.exit(0);
 });
