@@ -1,0 +1,26 @@
+<!-- Modal CEK NIK -->
+<div id="nikModal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close">&times;</span>
+        <h2>CEK NIK Subsidi</h2>
+        <p>Masukkan NIK Anda untuk mengecek kelayakan subsidi rumah</p>
+        <form id="nikForm">
+            <div class="form-group">
+                <label for="nikInput">NIK (16 Digit)</label>
+                <input 
+                    type="text" 
+                    id="nikInput" 
+                    name="nik" 
+                    maxlength="16" 
+                    placeholder="Contoh: 3201234567890123"
+                    required
+                    pattern="[0-9]{16}"
+                    inputmode="numeric"
+                >
+                <small class="help-text">Masukkan 16 digit nomor NIK Anda</small>
+                <small class="error-text" id="nikError"></small>
+            </div>
+            <button type="submit" class="btn-submit">Submit</button>
+        </form>
+    </div>
+</div>

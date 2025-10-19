@@ -1,7 +1,18 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <!-- ... head sama seperti sebelumnya ... -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <!-- SEO Meta Tags -->
+    <title>Detail Rumah Subsidi - RumahSubsidi.id</title>
+    <meta name="description" content="Detail lengkap rumah subsidi termasuk spesifikasi, harga, lokasi, dan cara pembelian. Temukan rumah subsidi impian Anda di sini.">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/style.css">
+
 </head>
 <body>
     <!-- Navbar Placeholder -->
@@ -9,14 +20,117 @@
 
     <!-- Main Content -->
     <main class="detail-page">
-        <!-- ... semua content detail page ... -->
+        <div class="container">
+            <!-- Back Button -->
+            <a href="search.html" class="back-button">
+                <i class="fas fa-arrow-left"></i>
+                Kembali ke Pencarian
+            </a>
+
+            <!-- Detail Header -->
+            <div class="detail-header">
+                <div>
+                    <h1 class="detail-title" id="detailTitle">Loading...</h1>
+                    <div class="detail-location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span id="detailLocation">Loading...</span>
+                    </div>
+                </div>
+                <div class="detail-price" id="detailPrice">Loading...</div>
+            </div>
+
+            <!-- Detail Content Grid -->
+            <div class="detail-content">
+                <!-- Left Column -->
+                <div>
+                    <!-- Gallery -->
+                    <div class="detail-gallery">
+                        <img id="mainImage" src="" alt="Property Image" class="main-image" loading="lazy">
+                        <div class="thumbnail-container" id="thumbnailContainer">
+                            <!-- Thumbnails will be inserted here -->
+                        </div>
+                    </div>
+
+                    <!-- Description Section -->
+                    <section class="detail-section">
+                        <h2 class="section-title">Deskripsi Properti</h2>
+                        <p id="propertyDescription">Loading...</p>
+                    </section>
+
+                    <!-- Specifications Section -->
+                    <section class="detail-section">
+                        <h2 class="section-title">Spesifikasi</h2>
+                        <div class="specs-grid" id="specsGrid">
+                            <!-- Specs will be inserted here -->
+                        </div>
+                    </section>
+
+                    <!-- Detail Specifications Section -->
+                    <section class="detail-section">
+                        <h2 class="section-title">Spesifikasi Detail Bangunan</h2>
+                        <div id="detailSpecs">
+                            <!-- Detail specs will be inserted here -->
+                        </div>
+                    </section>
+
+                    <!-- Location Section -->
+                    <section class="detail-section">
+                        <h2 class="section-title">Informasi Lokasi</h2>
+                        <div class="specs-grid">
+                            <div class="spec-item">
+                                <span class="spec-label">Provinsi</span>
+                                <span class="spec-value" id="detailProvinsi">Loading...</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Kabupaten/Kota</span>
+                                <span class="spec-value" id="detailKabupaten">Loading...</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Kecamatan</span>
+                                <span class="spec-value" id="detailKecamatan">Loading...</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Kelurahan</span>
+                                <span class="spec-value" id="detailKelurahan">Loading...</span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Right Column (Sidebar) -->
+                <aside>
+                    <!-- Contact Card -->
+                    <div class="contact-card">
+                        <h3 class="contact-title">Hubungi Kami</h3>
+                        <div class="contact-info" id="contactInfo">
+                            <!-- Contact info will be inserted here -->
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <div class="spec-item" style="margin-bottom: 0.75rem;">
+                                <span class="spec-label">Pengembang</span>
+                                <span class="spec-value" id="developerName">Loading...</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Asosiasi</span>
+                                <span class="spec-value" id="developerAsosiasi">Loading...</span>
+                            </div>
+                        </div>
+                        <a href="search.html" class="btn btn-primary" style="width: 100%; text-align: center;">
+                            <i class="fas fa-search"></i>
+                            Cari Properti Lain
+                        </a>
+                    </div>
+                </aside>
+            </div>
+        </div>
     </main>
 
     <!-- Footer Placeholder -->
     <div id="footer-placeholder"></div>
 
     <!-- Load Components First -->
-    <script src="js/components.js"></script>
+    <script src="js/components.js" defer></script>
+    <script src="js/nik-checker.js" defer></script>
     
     <!-- Then Load Page Scripts -->
     <script src="js/detail.js" defer></script>
@@ -25,4 +139,3 @@
     <script src="js/monitor.js" defer></script>
 </body>
 </html>
-

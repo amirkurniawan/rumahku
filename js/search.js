@@ -84,26 +84,41 @@ async function apiCall(endpoint, cacheKey = null) {
 
 // Initialize Google Maps
 function initMap() {
-  const center = { lat: -2.5489, lng: 118.0149 };
+  try {
+    const center = { lat: -2.5489, lng: 118.0149 };
 
-  map = new google.maps.Map(document.getElementById('map'), {
-    zoom: 5,
-    center: center,
-    mapTypeControl: true,
-    streetViewControl: false,
-    fullscreenControl: true,
-    zoomControl: true,
-    styles: [
-      { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-      { featureType: 'transit', elementType: 'labels', stylers: [{ visibility: 'off' }] }
-    ]
-  });
+    map = new google.maps.Map(document.getElementById('map'), {
+      zoom: 5,
+      center: center,
+      mapTypeControl: true,
+      streetViewControl: false,
+      fullscreenControl: true,
+      zoomControl: true,
+      styles: [
+        { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+        { featureType: 'transit', elementType: 'labels', stylers: [{ visibility: 'off' }] }
+      ]
+    });
 
-  // Load properties after map is ready
-  google.maps.event.addListenerOnce(map, 'idle', () => {
-    loadProperties();
-  });
+    // Update markers when map is ready (if properties are already loaded)
+    google.maps.event.addListenerOnce(map, 'idle', () => {
+      console.log('Map loaded, updating markers');
+      if (filteredProperties.length > 0) {
+        addPropertyMarkers(filteredProperties);
+      }
+    });
+  } catch (error) {
+    console.error('Error initializing map:', error);
+    // Hide map container if map fails to load
+    document.getElementById('mapContainer').style.display = 'none';
+    document.getElementById('searchResultsContainer').style.display = 'block';
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.view-btn[data-view="list"]').classList.add('active');
+  }
 }
+
+// Make initMap available globally for Google Maps callback
+window.initMap = initMap;
 
 // Create Marker Icon
 function createMarkerIcon(property, tipeSubsidi) {
@@ -130,6 +145,12 @@ function createMarkerIcon(property, tipeSubsidi) {
 
 // Add Property Markers
 function addPropertyMarkers(properties) {
+  // Skip if map is not initialized
+  if (!map || typeof google === 'undefined') {
+    console.log('Map not available, skipping markers');
+    return;
+  }
+
   // Clear existing markers
   markers.forEach(marker => marker.setMap(null));
   markers = [];
@@ -357,6 +378,9 @@ function showNotification(message, type = 'info') {
 document.addEventListener('DOMContentLoaded', () => {
   loadProvinsi();
 
+  // Load properties immediately on page load (don't wait for map)
+  loadProperties();
+
   // Form submit handler
   const form = document.getElementById('searchFiltersForm');
   form.addEventListener('submit', (e) => {
@@ -378,11 +402,11 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', function() {
       document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
       this.classList.add('active');
-      
+
       const view = this.dataset.view;
       const mapContainer = document.getElementById('mapContainer');
       const resultsContainer = document.getElementById('searchResultsContainer');
-      
+
       if (view === 'map') {
         mapContainer.style.display = 'block';
         resultsContainer.style.display = 'none';

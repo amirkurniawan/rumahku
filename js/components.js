@@ -102,4 +102,35 @@ window.reloadComponents = function() {
   loadFooter();
 };
 
+// Load Modal NIK (tambahkan di bawah loadFooter)
+async function loadModalNik() {
+    try {
+        const response = await fetch('/components/modal-nik.html');
+        const html = await response.text();
+        
+        // Insert before closing body tag
+        document.body.insertAdjacentHTML('beforeend', html);
+        console.log('Modal NIK loaded');
+    } catch (error) {
+        console.error('Error loading modal NIK:', error);
+    }
+}
+
+// Update initialization (ganti yang lama dengan ini)
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('Components loader initialized');
+    
+    await loadNavbar();
+    await loadFooter();
+    await loadModalNik(); // Tambah ini
+    
+    setActiveMenu();
+    
+    // Initialize NIK checker setelah modal loaded
+    setTimeout(initNikChecker, 100);
+});
+
 console.log('Components loader initialized');
+
+
+
