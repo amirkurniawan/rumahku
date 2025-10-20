@@ -5,7 +5,13 @@
   "main": "index.html",
   "scripts": {
     "config": "node generate-config.js",
+    "config:dev": "node generate-config.js dev",
+    "config:prod": "node generate-config.js prod",
+    "config:prod.local": "node generate-config.js prod.local",
     "start": "bash start-all.sh",
+    "start:dev": "bash start-dev.sh",
+    "start:prod": "bash start-prod.sh",
+    "start:prod.local": "bash start-prod-local.sh",
     "start:web": "bash start-web.sh",
     "start:api": "bash start-api.sh",
     "stop": "bash stop-all.sh",
@@ -14,7 +20,10 @@
     "proxy": "node proxy-server.js",
     "test": "echo 'Run tests here'",
     "lighthouse": "lighthouse http://localhost:8080 --view",
-    "build": "node generate-config.js && echo 'Build completed'"
+    "build": "node generate-config.js && echo 'Build completed'",
+    "build:dev": "node generate-config.js dev && echo 'Dev build completed'",
+    "build:prod": "node generate-config.js prod && echo 'Production build completed'",
+    "build:prod.local": "node generate-config.js prod.local && echo 'Production (local testing) build completed'"
   },
   "keywords": [
     "rumah-subsidi",

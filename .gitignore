@@ -25,7 +25,15 @@ logs/
 .env
 .env.local
 .env.*.local
-env.yaml
+
+# Environment config (local overrides)
+env.yaml              # Local development override (if used)
+env.*.local.yaml      # Local environment overrides (e.g., env.dev.local.yaml)
+
+# Keep these environment templates in git:
+# - env.dev.yaml (development template)
+# - env.prod.yaml (production template)
+# - env.yaml.example (general example)
 
 # Process ID files
 .web-server.pid

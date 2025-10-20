@@ -3,18 +3,32 @@
 # RumahSubsidi.id - Start API Proxy Server
 # This script starts the proxy server for API requests
 
-# Load config from env.yaml
-if [ ! -f "env.yaml" ]; then
-    echo "❌ env.yaml not found! Please create it first."
+# Get environment from ENV variable, default to 'yaml' (uses env.yaml)
+ENV=${ENV:-yaml}
+ENV_FILE="env.${ENV}.yaml"
+
+# If ENV is 'yaml', use env.yaml directly
+if [ "$ENV" = "yaml" ]; then
+    ENV_FILE="env.yaml"
+fi
+
+# Load config from environment file
+if [ ! -f "$ENV_FILE" ]; then
+    echo "❌ $ENV_FILE not found!"
+    echo "   Set ENV variable: export ENV=dev or export ENV=prod"
     exit 1
 fi
 
-# Generate config.js from env.yaml (in case it's not generated yet)
+# Generate config.js from environment file (in case it's not generated yet)
 echo "🔧 Ensuring config.js is up to date..."
-node generate-config.js > /dev/null 2>&1
+if [ "$ENV" = "yaml" ]; then
+    node generate-config.js > /dev/null 2>&1
+else
+    node generate-config.js $ENV > /dev/null 2>&1
+fi
 
-# Extract port from env.yaml
-PORT=$(grep -A2 "proxy:" env.yaml | grep "port:" | sed 's/.*port: //' | tr -d ' ')
+# Extract port from environment file (strip inline comments)
+PORT=$(grep -A2 "proxy:" "$ENV_FILE" | grep "port:" | sed 's/.*port: *//' | sed 's/ *#.*//' | tr -d ' ')
 
 if [ -z "$PORT" ]; then
     echo "⚠️  Port not found in env.yaml, using default 3000"
