@@ -247,19 +247,48 @@ async function loadProperties(kodeWilayah = null) {
       console.log(`🔍 Loading properties for kodeWilayah: ${kodeWilayah}`);
     }
 
+    console.log(`🌐 API URL: ${API_CONFIG.baseURL}${apiUrl}`);
+
     const cacheKey = kodeWilayah ? `search_${kodeWilayah}` : 'search_properties';
 
     const data = await apiCall(apiUrl, cacheKey);
 
-    if (!data || !data.data) {
-      throw new Error('No data received');
+    // Check if response has valid structure
+    if (!data) {
+      console.warn('⚠️ No response from API');
+      allProperties = [];
+      filteredProperties = [];
+      updateResults();
+      updateResultsCount();
+      showNotification('Tidak ada data dari server', 'warning');
+      return;
     }
 
-    console.log(`📊 Loaded ${data.data.length} properties`);
+    // Handle case where data.data doesn't exist or is not an array
+    if (!data.data || !Array.isArray(data.data)) {
+      console.warn('⚠️ Invalid data structure from API:', data);
+      allProperties = [];
+      filteredProperties = [];
+      updateResults();
+      updateResultsCount();
+      showNotification('Data Tidak Ditemukan', 'warning');
+      return;
+    }
 
+    console.log(`📊 Loaded ${data.data.length} properties from API`);
+
+    // Filter only active properties with subsidi type
     allProperties = data.data.filter(p =>
       p.aktivasi && p.tipeRumah.some(t => t.status === 'subsidi')
     );
+
+    console.log(`✅ After filtering: ${allProperties.length} active subsidi properties`);
+
+    // Handle empty results
+    if (allProperties.length === 0) {
+      console.log('ℹ️ No properties found for this area');
+      showNotification('Tidak ada properti subsidi di wilayah ini', 'info');
+    }
 
     filteredProperties = [...allProperties];
 
@@ -267,8 +296,16 @@ async function loadProperties(kodeWilayah = null) {
     updateResults();
     updateResultsCount();
   } catch (error) {
-    console.error('Error loading properties:', error);
-    showNotification('Gagal memuat data properti', 'error');
+    console.error('❌ Error loading properties:', error);
+    console.error('Error details:', error.message, error.stack);
+
+    // Reset to empty state
+    allProperties = [];
+    filteredProperties = [];
+    updateResults();
+    updateResultsCount();
+
+    showNotification('Gagal memuat data properti. Silakan coba lagi.', 'error');
   }
 }
 

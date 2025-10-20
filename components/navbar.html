@@ -3,8 +3,8 @@
     <div class="container">
         <div class="header-content">
             <a href="/" class="logo">
-                <div class="logo-icon">🏠</div>
-                <span>RumahSubsidi.id</span>
+                <div><img src="../assets/icons/logo.png" alt="RUMAGO Logo" width="50" height="50" /></div>
+                <span class="text-3xl font-extrabold text-rumago-primary">RUMAGO</span><span class="text-3xl font-light text-rumago-secondary" style="color: #FBBF24;">.id</span>
             </a>
             <nav>
                 <ul>
@@ -16,9 +16,14 @@
                     <li><a href="#" id="cekNikBtn" class="cek-nik-menu">Cek Subsidi</a></li>
                 </ul>
             </nav>
-            <div class="auth-buttons">
-                <button class="btn btn-outline">Masuk</button>
-                <button class="btn btn-primary">Daftar</button>
+            <div class="auth-buttons" id="authButtons">
+                <button class="btn btn-outline" id="loginButton">Masuk</button>
+                <button class="btn btn-primary" id="registerButton">Daftar</button>
+            </div>
+            <div class="user-info" id="userInfo" style="display: none;">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div class="user-name" id="userName">User</div>
+                <button class="btn btn-outline btn-sm" id="logoutButton">Keluar</button>
             </div>
         </div>
     </div>

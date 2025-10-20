@@ -14,7 +14,21 @@
       "Bash(curl -s http://localhost:8000)",
       "Bash(bash status.sh)",
       "Bash(curl -s http://localhost:8000/js/config.js)",
-      "Bash(curl -s -X POST http://localhost:8001/api/cek-subsidi -H \"Content-Type: application/json\" -d '{\"\"\"\"nik\"\"\"\":\"\"\"\"1234567890123456\"\"\"\"}')"
+      "Bash(curl -s -X POST http://localhost:8001/api/cek-subsidi -H \"Content-Type: application/json\" -d '{\"\"\"\"nik\"\"\"\":\"\"\"\"1234567890123456\"\"\"\"}')",
+      "Bash(npm run start:prod)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \"6003 6001\")",
+      "Bash(findstr \"LISTENING\")",
+      "Bash(curl -s -o /dev/null -w \"Port 6003: %{http_code}\\n\" http://localhost:6003)",
+      "Bash(curl -s -o /dev/null -w \"Port 6001: %{http_code}\\n\" http://localhost:6001)",
+      "Bash(curl -s -o /dev/null -w \"Web (6003): %{http_code}\\n\" http://localhost:6003)",
+      "Bash(curl -s -o /dev/null -w \"API (6001): %{http_code}\\n\" http://localhost:6001)",
+      "Bash(chmod +x start-prod-local.sh)",
+      "Bash(findstr \"6001 6002 6003\")",
+      "Bash(taskkill //PID 8680 //F)",
+      "Read(//d/BP - AMIR/CODE/**)",
+      "Bash(taskkill //PID 10040 //F)",
+      "Bash(npm run start:dev)"
     ],
     "deny": [],
     "ask": []

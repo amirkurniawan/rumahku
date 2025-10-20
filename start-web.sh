@@ -3,23 +3,38 @@
 # RumahSubsidi.id - Start Web Server
 # This script starts the http-server for serving static files
 
-# Load config from env.yaml
-if [ ! -f "env.yaml" ]; then
-    echo "❌ env.yaml not found! Please create it first."
+# Get environment from ENV variable, default to 'yaml' (uses env.yaml)
+ENV=${ENV:-yaml}
+ENV_FILE="env.${ENV}.yaml"
+
+# If ENV is 'yaml', use env.yaml directly
+if [ "$ENV" = "yaml" ]; then
+    ENV_FILE="env.yaml"
+fi
+
+# Load config from environment file
+if [ ! -f "$ENV_FILE" ]; then
+    echo "❌ $ENV_FILE not found!"
+    echo "   Set ENV variable: export ENV=dev or export ENV=prod"
     exit 1
 fi
 
-# Generate config.js from env.yaml
-echo "🔧 Generating config.js from env.yaml..."
-node generate-config.js
+# Generate config.js from environment file
+if [ "$ENV" = "yaml" ]; then
+    echo "🔧 Generating config.js from env.yaml..."
+    node generate-config.js
+else
+    echo "🔧 Generating config.js from $ENV_FILE..."
+    node generate-config.js $ENV
+fi
 
 if [ $? -ne 0 ]; then
     echo "❌ Failed to generate config.js"
     exit 1
 fi
 
-# Extract port from env.yaml (using grep and sed)
-PORT=$(grep -A2 "web:" env.yaml | grep "port:" | sed 's/.*port: //' | tr -d ' ')
+# Extract port from environment file (strip inline comments)
+PORT=$(grep -A2 "web:" "$ENV_FILE" | grep "port:" | sed 's/.*port: *//' | sed 's/ *#.*//' | tr -d ' ')
 
 if [ -z "$PORT" ]; then
     echo "⚠️  Port not found in env.yaml, using default 5000"
