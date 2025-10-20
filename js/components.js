@@ -55,7 +55,7 @@ async function loadFooter() {
     // Fallback: Show simple footer
     const placeholder = document.getElementById('footer-placeholder');
     if (placeholder) {
-      placeholder.innerHTML = '<footer style="padding: 2rem; text-align: center; background: #3b506c; color: white;">&copy; 2025 RumahSubsidi.id</footer>';
+      placeholder.innerHTML = '<footer style="padding: 2rem; text-align: center; background: #3b506c; color: white;">&copy; 2025 RUMAGO.id</footer>';
     }
   }
 }

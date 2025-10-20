@@ -25,7 +25,8 @@
       "Bash(curl -s -o /dev/null -w \"API (6001): %{http_code}\\n\" http://localhost:6001)",
       "Bash(chmod +x start-prod-local.sh)",
       "Bash(findstr \"6001 6002 6003\")",
-      "Bash(taskkill //PID 8680 //F)"
+      "Bash(taskkill //PID 8680 //F)",
+      "Read(//d/BP - AMIR/CODE/**)"
     ],
     "deny": [],
     "ask": []

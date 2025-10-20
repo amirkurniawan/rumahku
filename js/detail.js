@@ -176,7 +176,7 @@ async function loadPropertyDetail(propertyId) {
     }
 
     // Update Page Title
-    document.title = `${sanitizeInput(property.namaPerumahan)} - ${formatRupiah(tipeSubsidi.harga)} - RumahSubsidi.id`;
+    document.title = `${sanitizeInput(property.namaPerumahan)} - ${formatRupiah(tipeSubsidi.harga)} - RUMAGO.id`;
 
     // Update Basic Info
     document.getElementById('detailTitle').textContent = sanitizeInput(property.namaPerumahan);
