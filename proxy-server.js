@@ -3,18 +3,49 @@
  * API: https://my.pkp.go.id/cekbantuan
  *
  * Cara menjalankan:
- * 1. Install dependencies: npm install express cors axios form-data
- * 2. Jalankan server: node proxy-server.js
- * 3. Server akan berjalan di http://localhost:3000
+ * 1. Install dependencies: npm install
+ * 2. Jalankan server: bash start-api.sh (atau npm run start:api)
+ * 3. Port dikonfigurasi di env.yaml (default: 6001)
+ * 4. Server URL: lihat di env.yaml server.proxy.baseURL
  */
 
 const express = require('express');
 const axios = require('axios');
 const FormData = require('form-data');
 const cors = require('cors');
+const fs = require('fs');
+const yaml = require('js-yaml');
+const path = require('path');
+
+// Load configuration from env.yaml
+let CONFIG;
+try {
+  const envPath = path.join(__dirname, 'env.yaml');
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  CONFIG = yaml.load(envContent);
+  console.log('✅ Configuration loaded from env.yaml');
+} catch (error) {
+  console.error('❌ Failed to load env.yaml, using defaults');
+  console.error('Error:', error.message);
+  // Fallback to defaults
+  CONFIG = {
+    server: {
+      proxy: { port: 3000, host: '0.0.0.0' }
+    },
+    api: {
+      sikumbang: {
+        baseURL: 'https://sikumbang.tapera.go.id',
+        timeout: 30000
+      }
+    }
+  };
+}
 
 const app = express();
-const PORT = 3000;
+const PORT = CONFIG.server.proxy.port;
+const HOST = CONFIG.server.proxy.host;
+const SIKUMBANG_BASE_URL = CONFIG.api.sikumbang.baseURL;
+const SIKUMBANG_TIMEOUT = CONFIG.api.sikumbang.timeout;
 
 // Utility: Get timestamp in GMT+7 (Jakarta/Indonesia)
 function getTimestampGMT7() {
@@ -145,7 +176,7 @@ app.get('/api/detail-perumahan/:id', async (req, res) => {
 
   try {
     // Fetch HTML page from Sikumbang
-    const url = `https://sikumbang.tapera.go.id/lokasi-perumahan/${id}`;
+    const url = `${SIKUMBANG_BASE_URL}${CONFIG.api.sikumbang.endpoints.detail}/${id}`;
     console.log(`[${getTimestampGMT7()}] 📡 Requesting: ${url}`);
 
     const response = await axios.get(url, {
@@ -154,7 +185,7 @@ app.get('/api/detail-perumahan/:id', async (req, res) => {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7'
       },
-      timeout: 30000
+      timeout: SIKUMBANG_TIMEOUT
     });
 
     const html = response.data;
@@ -215,11 +246,15 @@ app.get('/api/detail-perumahan/:id', async (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
   console.log('═══════════════════════════════════════════════════');
   console.log(`[${getTimestampGMT7()}] 🚀 Proxy Server Running`);
+  console.log(`[${getTimestampGMT7()}] 📍 Environment: ${CONFIG.app.environment}`);
   console.log(`[${getTimestampGMT7()}] 📍 URL: http://localhost:${PORT}`);
-  console.log(`[${getTimestampGMT7()}] 🔧 API Endpoint: http://localhost:${PORT}/api/cek-subsidi`);
+  console.log(`[${getTimestampGMT7()}] 🔧 Endpoints:`);
+  console.log(`[${getTimestampGMT7()}]    - POST ${CONFIG.proxy.endpoints.nik}`);
+  console.log(`[${getTimestampGMT7()}]    - GET  ${CONFIG.proxy.endpoints.detail}/:id`);
+  console.log(`[${getTimestampGMT7()}] 🌐 Sikumbang API: ${SIKUMBANG_BASE_URL}`);
   console.log('═══════════════════════════════════════════════════');
   console.log('');
   console.log(`[${getTimestampGMT7()}] ✅ Ready to handle requests...`);

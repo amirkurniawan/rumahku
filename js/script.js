@@ -3,22 +3,24 @@
  * Optimized for Performance & Security
  */
 
-// Cache Configuration
+// Use configuration from APP_CONFIG (loaded from config.js)
 const CACHE_CONFIG = {
-  DEFAULT_TTL_MS: 5 * 60 * 1000,      // 5 minutes - Time To Live for cache
+  DEFAULT_TTL_MS: APP_CONFIG.cache.ttl,
   MAX_CACHE_SIZE: 100,                 // Maximum number of cached items
   CLEAR_INTERVAL_MS: 10 * 60 * 1000   // 10 minutes - Auto clear old cache
 };
 
-// API Configuration
+// API Configuration (from APP_CONFIG)
 const API_CONFIG = {
-  baseURL: 'https://sikumbang.tapera.go.id',
+  baseURL: APP_CONFIG.api.sikumbang.baseURL,
+  proxyURL: APP_CONFIG.server.proxy.baseURL,
   endpoints: {
-    search: '/ajax/lokasi/search',
-    provinsi: '/ajax/wilayah/get-provinsi',
-    kabupaten: '/ajax/wilayah/get-kabupaten'
+    search: APP_CONFIG.api.sikumbang.endpoints.search,
+    provinsi: APP_CONFIG.api.sikumbang.endpoints.provinsi,
+    kabupaten: APP_CONFIG.api.sikumbang.endpoints.kabupaten,
+    detail: APP_CONFIG.proxy.endpoints.detail
   },
-  cacheTime: CACHE_CONFIG.DEFAULT_TTL_MS
+  cacheTime: APP_CONFIG.cache.ttl
 };
 
 // Cache Manager
@@ -370,10 +372,10 @@ async function reverseGeocode(lat, lon) {
     console.log(`🌍 Reverse geocoding: ${lat}, ${lon}`);
 
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`,
+      `${APP_CONFIG.api.nominatim.baseURL}/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`,
       {
         headers: {
-          'User-Agent': 'RumahSubsidi.id/1.0'
+          'User-Agent': APP_CONFIG.api.nominatim.userAgent
         }
       }
     );

@@ -3,20 +3,20 @@
  * Property detail display and interaction
  */
 
-// API Configuration
+// API Configuration (from APP_CONFIG loaded in HTML)
 const API_CONFIG = {
-  baseURL: 'https://sikumbang.tapera.go.id',
-  proxyURL: 'http://localhost:3000',
+  baseURL: APP_CONFIG.api.sikumbang.baseURL,
+  proxyURL: APP_CONFIG.server.proxy.baseURL,
   endpoints: {
-    search: '/ajax/lokasi/search',
-    detail: '/api/detail-perumahan' // Proxy endpoint
+    search: APP_CONFIG.api.sikumbang.endpoints.search,
+    detail: APP_CONFIG.proxy.endpoints.detail // Proxy endpoint
   },
-  cacheTime: 5 * 60 * 1000
+  cacheTime: APP_CONFIG.cache.ttl
 };
 
 // Cache Manager
 class CacheManager {
-  constructor(ttl = 300000) {
+  constructor(ttl = APP_CONFIG.cache.ttl) {
     this.cache = new Map();
     this.ttl = ttl;
   }

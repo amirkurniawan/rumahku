@@ -3,16 +3,16 @@
  * Map integration and filtering functionality
  */
 
-// API Configuration
+// API Configuration (from APP_CONFIG loaded in HTML)
 const API_CONFIG = {
-  baseURL: 'https://sikumbang.tapera.go.id',
+  baseURL: APP_CONFIG.api.sikumbang.baseURL,
   endpoints: {
-    search: '/ajax/lokasi/search',
-    provinsi: '/ajax/wilayah/get-provinsi',
-    kabupaten: '/ajax/wilayah/get-kabupaten',
-    kecamatan: '/ajax/wilayah/get-kecamatan'
+    search: APP_CONFIG.api.sikumbang.endpoints.search,
+    provinsi: APP_CONFIG.api.sikumbang.endpoints.provinsi,
+    kabupaten: APP_CONFIG.api.sikumbang.endpoints.kabupaten,
+    kecamatan: APP_CONFIG.api.sikumbang.endpoints.kecamatan
   },
-  cacheTime: 5 * 60 * 1000
+  cacheTime: APP_CONFIG.cache.ttl
 };
 
 // Global variables

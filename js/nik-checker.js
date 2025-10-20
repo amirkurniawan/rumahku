@@ -25,9 +25,13 @@ async function checkSubsidi(nik) {
     console.log(`[${getTimestampGMT7()}] 🔍 Checking subsidi for NIK (masked):`, nik.substring(0, 4) + '************');
 
     try {
-        // Use proxy server to bypass CORS
-        console.log(`[${getTimestampGMT7()}] 📡 Calling proxy server...`);
-        const response = await fetch('http://localhost:3000/api/cek-subsidi', {
+        // Use proxy server to bypass CORS (using APP_CONFIG for port)
+        const proxyURL = APP_CONFIG.server.proxy.baseURL;
+        const endpoint = APP_CONFIG.proxy.endpoints.nik || '/api/cek-subsidi';
+        const apiURL = `${proxyURL}${endpoint}`;
+
+        console.log(`[${getTimestampGMT7()}] 📡 Calling proxy server: ${apiURL}`);
+        const response = await fetch(apiURL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
