@@ -228,7 +228,7 @@ function createInfoWindowContent(property, tipeSubsidi) {
       <p style="margin: 0 0 10px 0; font-size: 12px; color: #666;">
         <i class="fas fa-home"></i> Sisa Unit: ${property.jumlahUnit}
       </p>
-      <a href="detail.html?id=${encodeURIComponent(property.idLokasi)}" 
+      <a href="detail?id=${encodeURIComponent(property.idLokasi)}"
          style="display: block; text-align: center; padding: 6px 12px; background: #2c7be5; color: white; border-radius: 4px; font-size: 12px; text-decoration: none;">
         Lihat Detail
       </a>
@@ -466,7 +466,7 @@ function createPropertyCard(property, tipeSubsidi) {
       </div>
       <div class="property-footer">
         <div class="developer">${sanitizeInput(property.pengembang.nama)}</div>
-        <a href="detail.html?id=${encodeURIComponent(property.idLokasi)}" 
+        <a href="detail?id=${encodeURIComponent(property.idLokasi)}" 
            class="btn btn-primary">
           Detail
         </a>

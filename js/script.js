@@ -632,7 +632,7 @@ function createPropertyCard(property, tipeSubsidi) {
       </div>
       <div class="property-footer">
         <div class="developer">${sanitizeInput(property.pengembang.nama)}</div>
-        <a href="detail.html?id=${encodeURIComponent(property.idLokasi)}"
+        <a href="detail?id=${encodeURIComponent(property.idLokasi)}"
            class="btn btn-primary">
           Detail
         </a>
