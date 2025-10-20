@@ -1,10 +1,37 @@
 // NIK Checker Module
 
+// Utility: Get timestamp in GMT+7 (Jakarta/Indonesia)
+function getTimestampGMT7() {
+    const now = new Date();
+
+    // Convert to GMT+7
+    const offsetJakarta = 7 * 60; // GMT+7 in minutes
+    const localOffset = now.getTimezoneOffset(); // Current offset in minutes
+    const jakartaTime = new Date(now.getTime() + (offsetJakarta + localOffset) * 60000);
+
+    // Format: YYYY-MM-DD HH:mm:ss GMT+7
+    const year = jakartaTime.getFullYear();
+    const month = String(jakartaTime.getMonth() + 1).padStart(2, '0');
+    const day = String(jakartaTime.getDate()).padStart(2, '0');
+    const hours = String(jakartaTime.getHours()).padStart(2, '0');
+    const minutes = String(jakartaTime.getMinutes()).padStart(2, '0');
+    const seconds = String(jakartaTime.getSeconds()).padStart(2, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} GMT+7`;
+}
+
 // Function to check subsidi via API
 async function checkSubsidi(nik) {
+    console.log(`[${getTimestampGMT7()}] 🔍 Checking subsidi for NIK (masked):`, nik.substring(0, 4) + '************');
+
     try {
-        // Use proxy server to bypass CORS
-        const response = await fetch('http://localhost:3000/api/cek-subsidi', {
+        // Use proxy server to bypass CORS (using APP_CONFIG for port)
+        const proxyURL = APP_CONFIG.server.proxy.baseURL;
+        const endpoint = APP_CONFIG.proxy.endpoints.nik || '/api/cek-subsidi';
+        const apiURL = `${proxyURL}${endpoint}`;
+
+        console.log(`[${getTimestampGMT7()}] 📡 Calling proxy server: ${apiURL}`);
+        const response = await fetch(apiURL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -20,10 +47,11 @@ async function checkSubsidi(nik) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
+        console.log(`[${getTimestampGMT7()}] ✅ Got response from proxy`);
         const htmlText = await response.text();
         parseSubsidiResponse(htmlText, nik);
     } catch (error) {
-        console.error('Error:', error);
+        console.error(`[${getTimestampGMT7()}] ❌ Error:`, error);
 
         // Check if proxy server is running
         if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
@@ -86,14 +114,38 @@ function parseSubsidiResponse(htmlText, nik) {
 
 // Show Eligible Popup
 function showEligiblePopup(data, nik) {
+    console.log(`[${getTimestampGMT7()}] ✅ Showing ELIGIBLE popup`);
+
     // Close NIK modal first
     const nikModal = document.getElementById('nikModal');
-    if (nikModal) nikModal.classList.remove('active');
+    const nikForm = document.getElementById('nikForm');
+    const nikInput = document.getElementById('nikInput');
 
-    // Create result modal
-    const resultModal = document.createElement('div');
-    resultModal.id = 'subsidyResultModal';
-    resultModal.className = 'modal active';
+    if (nikModal) {
+        nikModal.classList.remove('active');
+        // CRITICAL: Set display none to completely remove from flow
+        nikModal.style.display = 'none';
+    }
+
+    // Reset and disable form completely
+    if (nikForm) {
+        nikForm.reset();
+        // Disable form to prevent ANY submission
+        nikForm.setAttribute('disabled', 'true');
+        nikForm.style.pointerEvents = 'none';
+    }
+
+    // Clear input value for privacy
+    if (nikInput) {
+        nikInput.value = '';
+    }
+
+    // Small delay to ensure modal is closed and form is reset
+    setTimeout(() => {
+        // Create result modal
+        const resultModal = document.createElement('div');
+        resultModal.id = 'subsidyResultModal';
+        resultModal.className = 'modal active';
 
     // Define column headers
     const headers = ['No', 'NIK', 'Nama', 'Status', 'Keterangan', 'DTSEN', 'BSPS', 'FLPP', 'BP2BT'];
@@ -134,36 +186,37 @@ function showEligiblePopup(data, nik) {
     });
     tableHTML += '</tbody></table>';
 
-    resultModal.innerHTML = `
-        <div class="modal-content" style="max-width: 1000px; max-height: 80vh; overflow-y: auto;">
-            <span class="modal-close" onclick="document.getElementById('subsidyResultModal').remove()">&times;</span>
-            <div style="text-align: center; margin-bottom: 1.5rem;">
-                <div style="width: 60px; height: 60px; background: #00d97e; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
-                    <i class="fas fa-check" style="color: white; font-size: 2rem;"></i>
+        resultModal.innerHTML = `
+            <div class="modal-content" style="max-width: 1000px; max-height: 80vh; overflow-y: auto;">
+                <span class="modal-close" onclick="document.getElementById('subsidyResultModal').remove(); return false;">&times;</span>
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="width: 60px; height: 60px; background: #00d97e; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                        <i class="fas fa-check" style="color: white; font-size: 2rem;"></i>
+                    </div>
+                    <h2 style="color: #00d97e; margin-bottom: 0.5rem;">Selamat! Anda Eligible</h2>
+                    <p style="color: #666;">NIK: ${nik}</p>
                 </div>
-                <h2 style="color: #00d97e; margin-bottom: 0.5rem;">Selamat! Anda Eligible</h2>
-                <p style="color: #666;">NIK: ${nik}</p>
+                <div style="background: #f9fafb; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; overflow-x: auto;">
+                    <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem;">Detail Data Subsidi:</h3>
+                    ${tableHTML}
+                </div>
+                <div style="text-align: center; margin-top: 1.5rem;">
+                    <button type="button" onclick="document.getElementById('subsidyResultModal').remove(); return false;" class="btn btn-primary">
+                        Tutup
+                    </button>
+                </div>
             </div>
-            <div style="background: #f9fafb; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; overflow-x: auto;">
-                <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem;">Detail Data Subsidi:</h3>
-                ${tableHTML}
-            </div>
-            <div style="text-align: center; margin-top: 1.5rem;">
-                <button onclick="document.getElementById('subsidyResultModal').remove()" class="btn btn-primary">
-                    Tutup
-                </button>
-            </div>
-        </div>
-    `;
+        `;
 
-    document.body.appendChild(resultModal);
+        document.body.appendChild(resultModal);
 
-    // Close on outside click
-    resultModal.addEventListener('click', function(e) {
-        if (e.target === resultModal) {
-            resultModal.remove();
-        }
-    });
+        // Close on outside click
+        resultModal.addEventListener('click', function(e) {
+            if (e.target === resultModal) {
+                resultModal.remove();
+            }
+        });
+    }, 100); // 100ms delay
 }
 
 // Show Not Eligible notification (simple message)
@@ -192,7 +245,7 @@ function showNotEligible(message) {
         </div>
         <h3 style="margin-bottom: 1rem; color: #e63757;">Tidak Eligible</h3>
         <p style="color: #666; margin-bottom: 1.5rem; white-space: pre-line;">${message}</p>
-        <button onclick="this.parentElement.remove()" class="btn btn-primary">Tutup</button>
+        <button type="button" onclick="this.parentElement.remove(); return false;" class="btn btn-primary">Tutup</button>
     `;
 
     document.body.appendChild(notification);
@@ -204,14 +257,38 @@ function showNotEligible(message) {
 
 // Show Not Eligible with Data Table
 function showNotEligibleWithData(data, nik) {
+    console.log(`[${getTimestampGMT7()}] ❌ Showing NOT ELIGIBLE popup with data`);
+
     // Close NIK modal first
     const nikModal = document.getElementById('nikModal');
-    if (nikModal) nikModal.classList.remove('active');
+    const nikForm = document.getElementById('nikForm');
+    const nikInput = document.getElementById('nikInput');
 
-    // Create result modal
-    const resultModal = document.createElement('div');
-    resultModal.id = 'subsidyResultModal';
-    resultModal.className = 'modal active';
+    if (nikModal) {
+        nikModal.classList.remove('active');
+        // CRITICAL: Set display none to completely remove from flow
+        nikModal.style.display = 'none';
+    }
+
+    // Reset and disable form completely
+    if (nikForm) {
+        nikForm.reset();
+        // Disable form to prevent ANY submission
+        nikForm.setAttribute('disabled', 'true');
+        nikForm.style.pointerEvents = 'none';
+    }
+
+    // Clear input value for privacy
+    if (nikInput) {
+        nikInput.value = '';
+    }
+
+    // Small delay to ensure modal is closed and form is reset
+    setTimeout(() => {
+        // Create result modal
+        const resultModal = document.createElement('div');
+        resultModal.id = 'subsidyResultModal';
+        resultModal.className = 'modal active';
 
     // Define column headers
     const headers = ['No', 'NIK', 'Nama', 'Status', 'Keterangan', 'DTSEN', 'BSPS', 'FLPP', 'BP2BT'];
@@ -252,57 +329,58 @@ function showNotEligibleWithData(data, nik) {
     });
     tableHTML += '</tbody></table>';
 
-    resultModal.innerHTML = `
-        <div class="modal-content" style="max-width: 1000px; max-height: 80vh; overflow-y: auto;">
-            <span class="modal-close" onclick="document.getElementById('subsidyResultModal').remove()">&times;</span>
-            <div style="text-align: center; margin-bottom: 1.5rem;">
-                <div style="width: 60px; height: 60px; background: #e63757; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
-                    <i class="fas fa-times" style="color: white; font-size: 2rem;"></i>
+        resultModal.innerHTML = `
+            <div class="modal-content" style="max-width: 1000px; max-height: 80vh; overflow-y: auto;">
+                <span class="modal-close" onclick="document.getElementById('subsidyResultModal').remove(); return false;">&times;</span>
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="width: 60px; height: 60px; background: #e63757; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                        <i class="fas fa-times" style="color: white; font-size: 2rem;"></i>
+                    </div>
+                    <h2 style="color: #e63757; margin-bottom: 0.5rem;">Maaf, Anda Belum Layak</h2>
+                    <p style="color: #666;">NIK: ${nik}</p>
                 </div>
-                <h2 style="color: #e63757; margin-bottom: 0.5rem;">Maaf, Anda Belum Layak</h2>
-                <p style="color: #666;">NIK: ${nik}</p>
+                <div style="background: #f9fafb; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; overflow-x: auto;">
+                    <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem;">Detail Data Subsidi:</h3>
+                    ${tableHTML}
+                </div>
+                <div style="text-align: center; margin-top: 1.5rem;">
+                    <button type="button" onclick="document.getElementById('subsidyResultModal').remove(); return false;" class="btn btn-primary">
+                        Tutup
+                    </button>
+                </div>
             </div>
-            <div style="background: #f9fafb; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; overflow-x: auto;">
-                <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem;">Detail Data Subsidi:</h3>
-                ${tableHTML}
-            </div>
-            <div style="text-align: center; margin-top: 1.5rem;">
-                <button onclick="document.getElementById('subsidyResultModal').remove()" class="btn btn-primary">
-                    Tutup
-                </button>
-            </div>
-        </div>
-    `;
+        `;
 
-    document.body.appendChild(resultModal);
+        document.body.appendChild(resultModal);
 
-    // Close on outside click
-    resultModal.addEventListener('click', function(e) {
-        if (e.target === resultModal) {
-            resultModal.remove();
-        }
-    });
+        // Close on outside click
+        resultModal.addEventListener('click', function(e) {
+            if (e.target === resultModal) {
+                resultModal.remove();
+            }
+        });
+    }, 100); // 100ms delay
 }
 
 function initNikChecker() {
-    console.log('Initializing NIK Checker...');
+    console.log(`[${getTimestampGMT7()}] 🔄 Initializing NIK Checker...`);
 
     const modal = document.getElementById('nikModal');
     const btn = document.getElementById('cekNikBtn');
 
     if (!modal) {
-        console.warn('Modal NIK belum loaded, retry in 200ms...');
+        console.warn(`[${getTimestampGMT7()}] ⚠️ Modal NIK belum loaded, retry in 200ms...`);
         setTimeout(initNikChecker, 200);
         return;
     }
 
     if (!btn) {
-        console.warn('Button CEK NIK belum loaded, retry in 200ms...');
+        console.warn(`[${getTimestampGMT7()}] ⚠️ Button CEK NIK belum loaded, retry in 200ms...`);
         setTimeout(initNikChecker, 200);
         return;
     }
 
-    console.log('✅ NIK Checker ready!');
+    console.log(`[${getTimestampGMT7()}] ✅ NIK Checker ready! Event listeners attaching...`);
 
     const closeBtn = modal.querySelector('.modal-close');
     const nikForm = document.getElementById('nikForm');
@@ -312,9 +390,18 @@ function initNikChecker() {
     // Open modal
     btn.addEventListener('click', function(e) {
         e.preventDefault();
-        console.log('Opening modal...');
+        console.log(`[${getTimestampGMT7()}] 🔓 Opening NIK modal...`);
+
+        // Re-enable modal and form (in case it was disabled by result popup)
+        modal.style.display = '';
         modal.classList.add('active');
+
+        if (nikForm) {
+            nikForm.removeAttribute('disabled');
+            nikForm.style.pointerEvents = '';
+        }
     });
+    console.log(`[${getTimestampGMT7()}] ✅ Modal open handler attached`);
 
     // Close modal
     if (closeBtn) {
@@ -347,18 +434,21 @@ function initNikChecker() {
     // Form submit
     if (nikForm) {
         nikForm.addEventListener('submit', async function(e) {
+            // CRITICAL: Prevent form from submitting and refreshing page
             e.preventDefault();
+            e.stopPropagation();
+            console.log('📝 Form submitted, processing NIK...');
 
             const nikValue = nikInput.value.trim();
 
             if (nikValue.length !== 16) {
                 showError('NIK harus 16 digit angka');
-                return;
+                return false;
             }
 
             if (!/^\d{16}$/.test(nikValue)) {
                 showError('NIK hanya boleh berisi angka');
-                return;
+                return false;
             }
 
             // Show loading state
@@ -370,13 +460,23 @@ function initNikChecker() {
             try {
                 await checkSubsidi(nikValue);
             } catch (error) {
-                console.error('Error checking subsidi:', error);
-                showError('Terjadi kesalahan. Silakan coba lagi.');
+                // Use ErrorHandler if available, otherwise fallback
+                if (typeof ErrorHandler !== 'undefined') {
+                    ErrorHandler.handle(error, 'CheckSubsidi');
+                } else {
+                    console.error('Error checking subsidi:', error);
+                    showError('Terjadi kesalahan. Silakan coba lagi.');
+                }
             } finally {
                 submitBtn.textContent = originalText;
                 submitBtn.disabled = false;
             }
+
+            return false; // Extra safety to prevent form submission
         });
+        console.log('✅ Form submit handler attached');
+    } else {
+        console.error('❌ nikForm not found!');
     }
 
     function showError(message) {
@@ -393,6 +493,11 @@ function initNikChecker() {
 }
 
 // Auto-initialize when script loads
-if (typeof initNikChecker === 'function') {
-    console.log('NIK Checker script loaded');
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initNikChecker);
+} else {
+    // DOM already loaded
+    initNikChecker();
 }
+
+console.log('NIK Checker script loaded');

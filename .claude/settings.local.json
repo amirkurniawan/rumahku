@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node generate-config.js)",
+      "Bash(chmod +x status.sh)",
+      "Bash(status.bat)",
+      "Bash(cmd.exe //c status.bat)",
+      "Bash(bash start-all.sh)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:6000)",
+      "Bash(curl -s -o /dev/null -w \"HTTP Status: %{http_code}\\nContent-Type: %{content_type}\\nTotal Time: %{time_total}s\" http://localhost:6000)",
+      "Bash(curl -s http://localhost:6000/js/config.js)",
+      "Bash(curl -s -o /dev/null -w \"API Server Status: %{http_code}\" http://localhost:6001)",
+      "Bash(bash stop-all.sh)",
+      "Bash(curl -s http://localhost:8000)",
+      "Bash(bash status.sh)",
+      "Bash(curl -s http://localhost:8000/js/config.js)",
+      "Bash(curl -s -X POST http://localhost:8001/api/cek-subsidi -H \"Content-Type: application/json\" -d '{\"\"\"\"nik\"\"\"\":\"\"\"\"1234567890123456\"\"\"\"}')"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

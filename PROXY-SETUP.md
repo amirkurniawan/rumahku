@@ -1,5 +1,9 @@
 # Setup Proxy Server untuk CEK NIK Subsidi
 
+> **⚠️ NOTE:** Port configuration sekarang diatur via `env.yaml`.
+> Default ports: Web Server = **6000**, API Proxy = **6001**.
+> Lihat [CONFIG-README.md](CONFIG-README.md) untuk detail lengkap.
+
 ## 📋 Mengapa Butuh Proxy Server?
 
 API `https://my.pkp.go.id/cekbantuan` tidak mengizinkan akses langsung dari browser (CORS policy). Untuk mengatasinya, kita perlu proxy server yang berjalan di backend.

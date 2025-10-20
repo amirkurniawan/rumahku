@@ -3,16 +3,16 @@
  * Map integration and filtering functionality
  */
 
-// API Configuration
+// API Configuration (from APP_CONFIG loaded in HTML)
 const API_CONFIG = {
-  baseURL: 'https://sikumbang.tapera.go.id',
+  baseURL: APP_CONFIG.api.sikumbang.baseURL,
   endpoints: {
-    search: '/ajax/lokasi/search',
-    provinsi: '/ajax/wilayah/get-provinsi',
-    kabupaten: '/ajax/wilayah/get-kabupaten',
-    kecamatan: '/ajax/wilayah/get-kecamatan'
+    search: APP_CONFIG.api.sikumbang.endpoints.search,
+    provinsi: APP_CONFIG.api.sikumbang.endpoints.provinsi,
+    kabupaten: APP_CONFIG.api.sikumbang.endpoints.kabupaten,
+    kecamatan: APP_CONFIG.api.sikumbang.endpoints.kecamatan
   },
-  cacheTime: 5 * 60 * 1000
+  cacheTime: APP_CONFIG.cache.ttl
 };
 
 // Global variables
@@ -21,6 +21,11 @@ let markers = [];
 let filteredProperties = [];
 let allProperties = [];
 let infoWindows = [];
+
+// Location data storage
+let provinsiData = [];
+let kabupatenData = [];
+let kecamatanData = [];
 
 // Cache Manager
 class CacheManager {
@@ -65,16 +70,28 @@ function formatRupiah(angka) {
 async function apiCall(endpoint, cacheKey = null) {
   if (cacheKey) {
     const cachedData = cache.get(cacheKey);
-    if (cachedData) return cachedData;
+    if (cachedData) {
+      console.log(`Cache hit: ${cacheKey}`);
+      return cachedData;
+    }
   }
 
   try {
-    const response = await fetch(API_CONFIG.baseURL + endpoint);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    
+    // IMPORTANT: Use 'reload' to bypass browser disk cache
+    // This prevents using cached 301/302 redirect responses
+    const response = await fetch(API_CONFIG.baseURL + endpoint, {
+      cache: 'reload',  // Always fetch fresh from server
+      redirect: 'follow'  // Follow redirects automatically
+    });
+
+    if (!response.ok) {
+      console.error(`API Error: ${response.status} ${response.statusText}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     const data = await response.json();
     if (cacheKey) cache.set(cacheKey, data);
-    
+
     return data;
   } catch (error) {
     console.error('API Error:', error);
@@ -211,7 +228,7 @@ function createInfoWindowContent(property, tipeSubsidi) {
       <p style="margin: 0 0 10px 0; font-size: 12px; color: #666;">
         <i class="fas fa-home"></i> Sisa Unit: ${property.jumlahUnit}
       </p>
-      <a href="detail.html?id=${encodeURIComponent(property.idLokasi)}" 
+      <a href="detail?id=${encodeURIComponent(property.idLokasi)}"
          style="display: block; text-align: center; padding: 6px 12px; background: #2c7be5; color: white; border-radius: 4px; font-size: 12px; text-decoration: none;">
         Lihat Detail
       </a>
@@ -220,23 +237,32 @@ function createInfoWindowContent(property, tipeSubsidi) {
 }
 
 // Load Properties
-async function loadProperties() {
+async function loadProperties(kodeWilayah = null) {
   try {
-    const data = await apiCall(
-      `${API_CONFIG.endpoints.search}?sort=terdekat&page=1&limit=100`,
-      'search_properties'
-    );
+    // Build API URL with optional kodeWilayah filter
+    let apiUrl = `${API_CONFIG.endpoints.search}?selectedSearch=wilayah&skalaPerumahan=semua&sort=terbaru&searchBy=nama-perumahan&page=1&limit=100`;
+
+    if (kodeWilayah) {
+      apiUrl += `&kodeWilayah=${kodeWilayah}`;
+      console.log(`🔍 Loading properties for kodeWilayah: ${kodeWilayah}`);
+    }
+
+    const cacheKey = kodeWilayah ? `search_${kodeWilayah}` : 'search_properties';
+
+    const data = await apiCall(apiUrl, cacheKey);
 
     if (!data || !data.data) {
       throw new Error('No data received');
     }
 
-    allProperties = data.data.filter(p => 
+    console.log(`📊 Loaded ${data.data.length} properties`);
+
+    allProperties = data.data.filter(p =>
       p.aktivasi && p.tipeRumah.some(t => t.status === 'subsidi')
     );
 
     filteredProperties = [...allProperties];
-    
+
     addPropertyMarkers(filteredProperties);
     updateResults();
     updateResultsCount();
@@ -247,7 +273,7 @@ async function loadProperties() {
 }
 
 // Apply Filters
-function applyFilters(formData) {
+async function applyFilters(formData) {
   const filters = {
     provinsi: formData.get('provinsi'),
     kabupaten: formData.get('kabupaten'),
@@ -257,24 +283,139 @@ function applyFilters(formData) {
     unit: parseInt(formData.get('unit')) || 0
   };
 
+  console.log('🔍 Applying filters:', filters);
+
+  // Determine which kodeWilayah to use (priority: kecamatan > kabupaten > provinsi)
+  let kodeWilayah = null;
+  let locationName = null;
+
+  if (filters.kecamatan) {
+    kodeWilayah = filters.kecamatan;
+    const kecamatan = kecamatanData.find(k => k.kodeWilayah === filters.kecamatan);
+    locationName = kecamatan?.namaWilayah || 'Kecamatan';
+    console.log('📍 Using kecamatan filter:', locationName, kodeWilayah);
+  } else if (filters.kabupaten) {
+    kodeWilayah = filters.kabupaten;
+    const kabupaten = kabupatenData.find(k => k.kodeWilayah === filters.kabupaten);
+    locationName = kabupaten?.namaWilayah || 'Kabupaten';
+    console.log('📍 Using kabupaten filter:', locationName, kodeWilayah);
+  } else if (filters.provinsi) {
+    kodeWilayah = filters.provinsi;
+    const provinsi = provinsiData.find(p => p.kodeWilayah === filters.provinsi);
+    locationName = provinsi?.namaWilayah || 'Provinsi';
+    console.log('📍 Using provinsi filter:', locationName, kodeWilayah);
+  }
+
+  // Load properties from API with kodeWilayah filter
+  await loadProperties(kodeWilayah);
+
+  // Apply additional client-side filters (price and unit)
   filteredProperties = allProperties.filter(property => {
     const tipeSubsidi = property.tipeRumah.find(t => t.status === 'subsidi');
     if (!tipeSubsidi) return false;
 
-    if (filters.provinsi && property.wilayah.provinsi !== filters.provinsi) return false;
-    if (filters.kabupaten && property.wilayah.kabupaten !== filters.kabupaten) return false;
-    if (filters.kecamatan && property.wilayah.kecamatan !== filters.kecamatan) return false;
+    // Price filters
     if (tipeSubsidi.harga < filters.hargaMin) return false;
     if (tipeSubsidi.harga > filters.hargaMax) return false;
+
+    // Unit filter
     if (property.jumlahUnit < filters.unit) return false;
 
     return true;
   });
 
+  console.log(`✅ Filtered to ${filteredProperties.length} properties`);
+
+  // Update display
   addPropertyMarkers(filteredProperties);
   updateResults();
   updateResultsCount();
+
+  // Show filter indicator if location filter is active
+  showFilterIndicator(locationName, filters);
 }
+
+// Show Filter Indicator
+function showFilterIndicator(locationName, filters) {
+  // Remove existing indicator
+  const existingIndicator = document.querySelector('.filter-indicator');
+  if (existingIndicator) {
+    existingIndicator.remove();
+  }
+
+  // Build filter summary
+  const filterSummary = [];
+
+  if (locationName) {
+    filterSummary.push(`📍 <strong>${locationName}</strong>`);
+  }
+
+  if (filters.hargaMin > 0) {
+    filterSummary.push(`Harga min: ${formatRupiah(filters.hargaMin)}`);
+  }
+
+  if (filters.hargaMax < Infinity) {
+    filterSummary.push(`Harga max: ${formatRupiah(filters.hargaMax)}`);
+  }
+
+  if (filters.unit > 0) {
+    filterSummary.push(`Min ${filters.unit}+ unit`);
+  }
+
+  // Only show if there are active filters
+  if (filterSummary.length === 0) return;
+
+  const indicator = document.createElement('div');
+  indicator.className = 'filter-indicator';
+  indicator.style.cssText = `
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border-left: 4px solid #2c7be5;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  `;
+
+  indicator.innerHTML = `
+    <div>
+      <strong>🔍 Filter Aktif:</strong> ${filterSummary.join(' | ')}
+    </div>
+    <button onclick="clearAllFilters()" style="
+      background: #2c7be5;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    ">
+      ✕ Hapus Semua Filter
+    </button>
+  `;
+
+  const container = document.querySelector('.results-summary');
+  if (container) {
+    container.parentElement.insertBefore(indicator, container);
+  }
+}
+
+// Clear All Filters
+window.clearAllFilters = function() {
+  const form = document.getElementById('searchFiltersForm');
+  form.reset();
+
+  // Reload all properties without filters
+  loadProperties(null);
+
+  // Remove indicator
+  const indicator = document.querySelector('.filter-indicator');
+  if (indicator) {
+    indicator.remove();
+  }
+};
 
 // Update Results Display
 function updateResults() {
@@ -325,7 +466,7 @@ function createPropertyCard(property, tipeSubsidi) {
       </div>
       <div class="property-footer">
         <div class="developer">${sanitizeInput(property.pengembang.nama)}</div>
-        <a href="detail.html?id=${encodeURIComponent(property.idLokasi)}" 
+        <a href="detail?id=${encodeURIComponent(property.idLokasi)}" 
            class="btn btn-primary">
           Detail
         </a>
@@ -348,15 +489,100 @@ async function loadProvinsi() {
   try {
     const data = await apiCall(API_CONFIG.endpoints.provinsi, 'provinsi_list');
     data.sort((a, b) => a.namaWilayah.localeCompare(b.namaWilayah));
-    
+
+    // Store data globally
+    provinsiData = data;
+
     data.forEach(prov => {
       const option = document.createElement('option');
-      option.value = prov.namaWilayah;
+      option.value = prov.kodeWilayah; // Store kodeWilayah instead of name
       option.textContent = sanitizeInput(prov.namaWilayah);
+      option.dataset.nama = prov.namaWilayah;
       select.appendChild(option);
     });
   } catch (error) {
     console.error('Error loading provinsi:', error);
+  }
+}
+
+// Load Kabupaten
+async function loadKabupaten(kodeProvinsi) {
+  const select = document.getElementById('searchKabupaten');
+
+  // Clear existing options
+  select.innerHTML = '<option value="">Semua Kabupaten/Kota</option>';
+
+  // Clear kecamatan
+  const kecamatanSelect = document.getElementById('searchKecamatan');
+  kecamatanSelect.innerHTML = '<option value="">Semua Kecamatan</option>';
+
+  if (!kodeProvinsi) {
+    kabupatenData = [];
+    kecamatanData = [];
+    return;
+  }
+
+  try {
+    const apiUrl = `${API_CONFIG.endpoints.kabupaten}/${kodeProvinsi}`;
+    const data = await apiCall(apiUrl, `kabupaten_${kodeProvinsi}`);
+
+    if (!data || data.length === 0) {
+      console.log('No kabupaten found for provinsi:', kodeProvinsi);
+      return;
+    }
+
+    data.sort((a, b) => a.namaWilayah.localeCompare(b.namaWilayah));
+
+    // Store data globally
+    kabupatenData = data;
+
+    data.forEach(kab => {
+      const option = document.createElement('option');
+      option.value = kab.kodeWilayah;
+      option.textContent = sanitizeInput(kab.namaWilayah);
+      option.dataset.nama = kab.namaWilayah;
+      select.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Error loading kabupaten:', error);
+  }
+}
+
+// Load Kecamatan
+async function loadKecamatan(kodeKabupaten) {
+  const select = document.getElementById('searchKecamatan');
+
+  // Clear existing options
+  select.innerHTML = '<option value="">Semua Kecamatan</option>';
+
+  if (!kodeKabupaten) {
+    kecamatanData = [];
+    return;
+  }
+
+  try {
+    const apiUrl = `${API_CONFIG.endpoints.kecamatan}/${kodeKabupaten}`;
+    const data = await apiCall(apiUrl, `kecamatan_${kodeKabupaten}`);
+
+    if (!data || data.length === 0) {
+      console.log('No kecamatan found for kabupaten:', kodeKabupaten);
+      return;
+    }
+
+    data.sort((a, b) => a.namaWilayah.localeCompare(b.namaWilayah));
+
+    // Store data globally
+    kecamatanData = data;
+
+    data.forEach(kec => {
+      const option = document.createElement('option');
+      option.value = kec.kodeWilayah;
+      option.textContent = sanitizeInput(kec.namaWilayah);
+      option.dataset.nama = kec.namaWilayah;
+      select.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Error loading kecamatan:', error);
   }
 }
 
@@ -375,26 +601,87 @@ function showNotification(message, type = 'info') {
 }
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
-  loadProvinsi();
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load provinsi data first
+  await loadProvinsi();
 
-  // Load properties immediately on page load (don't wait for map)
-  loadProperties();
+  // Check URL parameters for incoming filters (from index.html)
+  const urlParams = new URLSearchParams(window.location.search);
+  const kodeWilayah = urlParams.get('kodeWilayah');
+  const namaWilayah = urlParams.get('nama');
 
-  // Form submit handler
+  if (kodeWilayah) {
+    console.log(`🔍 Search page loaded with filter: ${namaWilayah} (${kodeWilayah})`);
+
+    // Pre-select the provinsi/kabupaten in the form if it matches
+    const provinsiSelect = document.getElementById('searchProvinsi');
+    const matchingProvinsi = provinsiData.find(p => p.kodeWilayah === kodeWilayah);
+
+    if (matchingProvinsi) {
+      // It's a provinsi code
+      provinsiSelect.value = kodeWilayah;
+    } else {
+      // It might be a kabupaten code - try to find parent provinsi
+      // For now, just load with the filter
+      console.log('Detected kabupaten/kecamatan filter from URL');
+    }
+
+    // Load properties with URL filter
+    await loadProperties(kodeWilayah);
+
+    // Show filter indicator
+    showFilterIndicator(namaWilayah, {
+      hargaMin: 0,
+      hargaMax: Infinity,
+      unit: 0
+    });
+  } else {
+    // Load all properties
+    await loadProperties();
+  }
+
+  // Setup cascading dropdowns
+  const provinsiSelect = document.getElementById('searchProvinsi');
+  const kabupatenSelect = document.getElementById('searchKabupaten');
+  const kecamatanSelect = document.getElementById('searchKecamatan');
+
+  provinsiSelect.addEventListener('change', async (e) => {
+    const kodeProvinsi = e.target.value;
+    console.log('Provinsi changed:', kodeProvinsi);
+
+    // Load kabupaten for selected provinsi
+    await loadKabupaten(kodeProvinsi);
+  });
+
+  kabupatenSelect.addEventListener('change', async (e) => {
+    const kodeKabupaten = e.target.value;
+    console.log('Kabupaten changed:', kodeKabupaten);
+
+    // Load kecamatan for selected kabupaten
+    await loadKecamatan(kodeKabupaten);
+  });
+
+  // Form submit handler (now async)
   const form = document.getElementById('searchFiltersForm');
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(form);
-    applyFilters(formData);
+    await applyFilters(formData);
   });
 
   // Reset filters
-  document.getElementById('resetFilters').addEventListener('click', () => {
-    filteredProperties = [...allProperties];
-    addPropertyMarkers(filteredProperties);
-    updateResults();
-    updateResultsCount();
+  document.getElementById('resetFilters').addEventListener('click', async () => {
+    // Clear URL parameters
+    window.history.replaceState({}, '', 'search.html');
+
+    // Reload all properties without filters
+    await loadProperties(null);
+
+    // Remove filter indicator
+    const indicator = document.querySelector('.filter-indicator');
+    if (indicator) {
+      indicator.remove();
+    }
   });
 
   // View toggle
@@ -416,10 +703,4 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
-
-  // Parse URL parameters
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.has('provinsi')) {
-    document.getElementById('searchProvinsi').value = urlParams.get('provinsi');
-  }
 });

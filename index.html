@@ -25,7 +25,7 @@
             <p>Platform resmi untuk mencari dan membeli rumah subsidi dengan mudah, cepat, dan terpercaya di seluruh Indonesia.</p>
 
             <div class="search-box">
-                <form class="search-form" id="heroSearchForm" action="search.html" method="GET">
+                <form class="search-form" id="heroSearchForm">
                     <div class="form-group">
                         <label for="provinsi">Provinsi</label>
                         <select id="provinsi" name="provinsi" class="form-control">
@@ -131,9 +131,12 @@
         </div>
     </div>
 
-    <!-- Load Components First -->
+    <!-- Load Configuration First -->
+    <script src="js/config.js"></script>
+
+    <!-- Load Components -->
     <script src="js/components.js"></script>
-    
+
     <!-- Then Load Page Scripts -->
     <script src="js/script.js" defer></script>
     <script src="js/nik-checker.js" defer></script>

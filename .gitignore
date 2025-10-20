@@ -25,6 +25,11 @@ logs/
 .env
 .env.local
 .env.*.local
+env.yaml
+
+# Process ID files
+.web-server.pid
+.api-server.pid
 
 # Build outputs
 dist/

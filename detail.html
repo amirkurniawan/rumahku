@@ -128,14 +128,29 @@
     <!-- Footer Placeholder -->
     <div id="footer-placeholder"></div>
 
-    <!-- Load Components First -->
+    <!-- Load Configuration First -->
+    <script src="js/config.js"></script>
+
+    <!-- Load Components -->
     <script src="js/components.js" defer></script>
     <script src="js/nik-checker.js" defer></script>
-    
+
     <!-- Then Load Page Scripts -->
     <script src="js/detail.js" defer></script>
-    
+
     <!-- Performance Monitoring (Optional) -->
     <script src="js/monitor.js" defer></script>
+
+    <!-- Temporary: Unregister Service Worker for Testing -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                    console.log('Service Worker unregistered:', registration);
+                }
+            });
+        }
+    </script>
 </body>
 </html>
