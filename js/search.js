@@ -271,7 +271,7 @@ async function loadProperties(kodeWilayah = null) {
       filteredProperties = [];
       updateResults();
       updateResultsCount();
-      showNotification('Format data tidak valid', 'warning');
+      showNotification('Data Tidak Ditemukan', 'warning');
       return;
     }
 

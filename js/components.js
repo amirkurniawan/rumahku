@@ -122,7 +122,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     await loadNavbar();
     await loadFooter();
-    await loadModalNik(); // Tambah ini
+    await loadModalNik();
+    await loadModalAuth(); // Load auth modals
     
     setActiveMenu();
     
@@ -134,3 +135,18 @@ console.log('Components loader initialized');
 
 
 
+
+// Load Modal Auth (Login & Register)
+async function loadModalAuth() {
+    try {
+        const response = await fetch('/components/modal-auth.html');
+        const html = await response.text();
+        const placeholder = document.getElementById('modal-auth-placeholder');
+        if (placeholder) {
+            placeholder.innerHTML = html;
+            console.log('Modal Auth loaded');
+        }
+    } catch (error) {
+        console.error('Error loading modal Auth:', error);
+    }
+}
