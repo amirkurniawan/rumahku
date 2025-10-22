@@ -1,0 +1,47 @@
+# Dockerfile for Frontend Web (Static files)
+# Build: docker build -f Dockerfile.web -t rumahku-web .
+# Run:   docker run -d -p 6003:6003 --name rumahku-web rumahku-web
+
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install http-server globally
+RUN npm install -g http-server
+
+# Copy necessary files for config generation
+COPY package*.json ./
+COPY generate-config.js ./
+COPY env.prod.yaml ./env.yaml
+
+# Install dependencies (only needed for config generation)
+# Note: Using npm install instead of npm ci for compatibility
+RUN npm install --production
+
+# Copy all static files
+COPY index.html ./
+COPY search.html ./
+COPY detail.html ./
+COPY error.html ./
+COPY css/ ./css/
+COPY images/ ./images/
+COPY assets/ ./assets/
+
+# Create js directory and copy existing js files
+RUN mkdir -p js
+COPY js/ ./js/
+
+# Expose web port (default 6003)
+EXPOSE 6003
+
+# Environment variable
+ENV NODE_ENV=production
+ENV ENV=prod
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost:6003/ || exit 1
+
+# Generate config and start web server
+CMD ["sh", "-c", "node generate-config.js prod && http-server -p 6003 -c-1 --cors"]

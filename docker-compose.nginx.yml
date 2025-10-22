@@ -1,4 +1,5 @@
-version: '3.8'
+# Docker Compose for Nginx Reverse Proxy
+# Optimized for Linux Mint with CasaOS
 
 services:
   nginx:
@@ -11,19 +12,22 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./logs:/var/log/nginx
     extra_hosts:
-      - "host.docker.internal:host-gateway"  # Allow container to access host services
+      - "host.docker.internal:172.22.0.1"  # Fixed IP for amir_rumahku-network gateway
     networks:
       - rumahku-network
     healthcheck:
-      test: ["CMD", "nginx", "-t"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/nginx-health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s  # Give time for backend services to start
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
+    environment:
+      - TZ=Asia/Jakarta  # Set timezone for logs
 
 networks:
   rumahku-network:
