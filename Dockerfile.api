@@ -1,0 +1,37 @@
+# Dockerfile for Backend API (proxy-server.js)
+# Build: docker build -f Dockerfile.api -t rumahku-api .
+# Run:   docker run -d -p 6001:6001 --name rumahku-api rumahku-api
+
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies (production only)
+# Note: Using npm install instead of npm ci for compatibility
+RUN npm install --production
+
+# Copy necessary files for API
+COPY proxy-server.js ./
+COPY generate-config.js ./
+COPY env.prod.yaml ./env.yaml
+
+# Create necessary directories
+RUN mkdir -p js logs
+
+# Expose API port (default 6001)
+EXPOSE 6001
+
+# Environment variable
+ENV NODE_ENV=production
+ENV ENV=prod
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:6001', (r) => {if (r.statusCode === 200) process.exit(0); else process.exit(1);})"
+
+# Generate config and start API server
+CMD ["sh", "-c", "node generate-config.js prod && node proxy-server.js"]

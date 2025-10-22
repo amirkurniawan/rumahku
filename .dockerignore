@@ -1,0 +1,63 @@
+# Node modules (will be installed in container)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker files
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+.*.log
+
+# Environment files (keep only what's needed, already copied specifically)
+env.dev.yaml
+env.prod.local.yaml
+.env
+.env.*
+
+# Runtime files
+*.pid
+.web-server.pid
+.api-server.pid
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
+DEPLOYMENT-CHECKLIST.md
+DOCKER-NGINX-SETUP.md
+*.md
+
+# Scripts (not needed in container)
+*.sh
+deploy-*.sh
+start-*.sh
+stop-*.sh
+status.sh
+test-*.sh
+
+# Nginx config (not needed in app containers)
+nginx.conf
+nginx-production.conf
